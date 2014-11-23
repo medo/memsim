@@ -17,3 +17,7 @@ class BaseMemory:
     @abstractmethod
     def get_hits(self):
         pass
+
+    @abstractmethod
+    def caclculate_cycles(self, address, is_read):
+        pass

@@ -7,4 +7,5 @@ class RegisterFile:
         return self.data[idx]
 
     def set(self, idx, value):
-        self.data[idx] = value
+        if idx != 0:
+            self.data[idx] = value

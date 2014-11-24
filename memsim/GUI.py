@@ -41,8 +41,9 @@ class GUI:
         assembled_code = assembled_code.split("\n")
         curr_address = self.start_address
         for line in assembled_code:
-            self.memory.write_in_address(curr_address, line)
-            curr_address += 2
+            if line != "":
+                self.memory.write_in_address(curr_address, line)
+                curr_address += 2
 
         data = self.data_box.get(1.0, END).split("\n")
         for d in data:

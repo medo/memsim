@@ -13,20 +13,27 @@ class MainMemory(BaseMemory):
         self.__latency = latency
         self.__line_size = line_size
         self.memory[30] = 15
+        self.hits = 0
+        self.misses = 0
 
 
     def get_address(self, address):
+        self.hits += 1
         return (self.__latency, self.memory[address])
 
     def write_in_address(self, address, value):
+        self.hits += 1
         self.memory[address] = value
         return self.__latency
 
     def get_misses(self):
-        pass
+        return self.misses
 
     def get_hits(self):
-        pass
+        return self.hits
+    
+    def print_logs(self, level):
+        print "Main Memory, hits : " + str(self.get_hits()) + " -- misses : " + str(self.get_misses())
 
     def caclculate_cycles(self, address, is_read):
         pass

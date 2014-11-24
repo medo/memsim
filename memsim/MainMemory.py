@@ -1,27 +1,31 @@
-from abc import ABCMeta, abstractmethod
-class BaseMemory:
-    __metaclass__ = ABCMeta
-    
-    @abstractmethod
+from BaseMemory import BaseMemory
+
+class MainMemory(BaseMemory):
+
+    '''
+    cache_size in Bytes
+    line_size in Bytes
+    '''
+
+    def __init__(self):
+        pass
+
     def get_address(self, address):
         pass
 
-    @abstractmethod
     def write_in_address(self, address, value):
         pass
 
-    @abstractmethod
     def get_misses(self):
         pass
 
-    @abstractmethod
     def get_hits(self):
         pass
 
-    @abstractmethod
     def caclculate_cycles(self, address, is_read):
         pass
 
-    @abstractmethod
     def get_line(self, address):
-        pass
+        return [100, "aho leil w 3ada"]
+
+

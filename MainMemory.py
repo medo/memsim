@@ -11,10 +11,8 @@ class Cache(BaseMemory):
 
         self.parent_memory = parent_memory
         self.__highest_address = cache_size / line_size
-        self.__associaticity_level = associativity_level
-        self.__entry_count = 0
-        buckets = (cache_size / line_size) / associativity_level
-        self.__bucket = [[{'valid': 0}] * associativity_level] * buckets
+        self.__memory = {}
+        self.__valid  = {}
 
     def get_address(self, address):
         pass
@@ -32,21 +30,21 @@ class Cache(BaseMemory):
         pass
 
     def get_line(self, address):
-        tag = address / self.__associaticity_level
-        bucket_index = address % self.__associaticity_level
-        found = False
-        for entry in self.__bucket[bucket_index]:
-            if entry['valid'] == 1 and entry['tag'] == tag:
-                entry['accessed_at'] = self.__entry_count
-                self.__entry_count += 1
-                found = True
 
-        if not found:
-            line = self.parent_memory.get_line(address)
-            self.__cache(address, line)
+        if address < self.__highest_line_address:
+            if self.__valid.get(address ,False):
+                return self.__memory[address]
+            elif self.parent_memroy:
+                data = self.parM
+                ent_memory.get_line(address)
+                self.__cache(address, data)
+                return data
 
-    def __cache(self, address, line):
-        pass
+            return None
+
+    def __cache(self, address, data):
+        self.__memory[address] = data
+        self.__memory[address] = True
 
 
 m = Cache(1024 * 1024, 1, 10, 10, 10, 10, 10, -1)

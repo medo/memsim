@@ -21,3 +21,7 @@ class BaseMemory:
     @abstractmethod
     def caclculate_cycles(self, address, is_read):
         pass
+
+    @abstractmethod
+    def get_line(self, address):
+        pass

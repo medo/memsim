@@ -34,7 +34,7 @@ class MainMemory(BaseMemory):
         result = [None] * self.__line_size
         j = 0
         for i in range(address, address + self.__line_size * 2, 2):
-            result[j] = self.memory[i]
+            result[j] = self.memory.get(i, 0)
             j += 1
         return (self.__latency, result)
 
@@ -44,6 +44,3 @@ class MainMemory(BaseMemory):
             self.memory[i] = data[j]
             j += 1
         return self.__latency
-
-
-

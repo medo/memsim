@@ -31,9 +31,9 @@ class Cache(BaseMemory):
 
     def get_address(self, address):
         word = address / 2
-        line = self.get_line(word)
-        cycles = 0
-        return [cycles, line[address % self.__line_size]]
+        result = self.get_line(word)
+
+        return [result[0], result[1][address % self.__line_size]]
 
     def write_block(self, line_address, data):
         tag = line_address / self.__associaticity_level
@@ -89,11 +89,10 @@ class Cache(BaseMemory):
             self.__parent_memory.write_in_address(address, value)
 
 
-        print "Cache miss"
         self.__misses += 1
-        result = self.parent_memory.get_line(address)
+        result = self.__parent_memory.get_line(address)
         self.__cache(address, result[1])
-        return (result[0] + self.__miss_cycles, result[1])
+        return result[0] + self.__hit_cycles
 
 
     def get_misses(self):

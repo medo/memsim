@@ -88,11 +88,10 @@ class Cache(BaseMemory):
             self.__parent_memory.write_in_address(address, value)
 
 
-        print "Cache miss"
         self.__misses += 1
-        result = self.parent_memory.get_line(address)
+        result = self.__parent_memory.get_line(address)
         self.__cache(address, result[1])
-        return (result[0] + self.__miss_cycles, result[1])
+        return (result[0] + self.__hit_cycles, result[1])
 
 
     def get_misses(self):

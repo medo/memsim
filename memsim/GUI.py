@@ -41,14 +41,14 @@ class GUI:
         assembled_code = assembled_code.split("\n")
         curr_address = self.start_address
         for line in assembled_code:
-            self.instruction_store.write_in_address(curr_address, line)
+            self.memory.write_in_address(curr_address, line)
             curr_address += 2
 
         data = self.data_box.get(1.0, END).split("\n")
         for d in data:
             if d != "":
                 dd = d.split(" ")
-                self.data_store.write_in_address(int(dd[0]), dd[1])
+                self.memory.write_in_address(int(dd[0]), dd[1])
 
         self.update()
         self.progress_button.config(state='normal')

@@ -37,8 +37,8 @@ class InstructionParser:
             m = re.match("(RET),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
-        elif re.match("(ADD|SUB|ADDI|NAND),([^, ]+),([^, ]+),([^, ]+)",line):
-            m = re.match("(ADD|SUB|ADDI|NAND),([^, ]+),([^, ]+),([^, ]+)",line)
+        elif re.match("(ADD|SUB|ADDI|NAND|MUL),([^, ]+),([^, ]+),([^, ]+)",line):
+            m = re.match("(ADD|SUB|ADDI|NAND|MUL),([^, ]+),([^, ]+),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))

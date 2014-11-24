@@ -30,7 +30,7 @@ class Processor:
                 self.cycles -=1
                 self.stopped = True
                 return False
-        elif self.current_instruction == None :
+        if self.current_instruction == None :
             if self.busy_for > 0:
                 self.busy_for -= 1
             if self.busy_for == 0:
@@ -58,7 +58,9 @@ class Processor:
                         self.pc += 2
                         self.current_instruction = None
                         self.pending = False
-
+    def execute_all(self):
+        while self.progress() != False:
+            pass
 
     def execute_instruction(self, instruction):
         if instruction.type_ == InstructionType.load : self.load(instruction.reg_a, instruction.reg_b, instruction.imm)

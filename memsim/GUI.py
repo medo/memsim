@@ -7,7 +7,10 @@ from Assembler import Assembler
 class GUI:
     
     def execute(self):
-        print "HI"
+        self.processor.execute_all()
+        self.progress_button.config(state='normal')
+        self.execute_button.config(state='normal')
+        self.update()
 
     def progress(self):
         ret = self.processor.progress()
@@ -95,10 +98,16 @@ class GUI:
         text = self.code_box.selection_get(selection='CLIPBOARD')
         self.code_box.insert('insert', text)
 
+    def copy(self, event=None):
+        self.code_box.clipboard_clear()
+        text = self.code_box.get("sel.first", "sel.last")
+        self.code_box.clipboard_append(text)
+
     def create_items(self):
         self.code_box = Text(self.root)
         self.code_box.place(relx=1, x=-235, y=0, anchor=NE)
-        self.code_box.bind('<Control-v>', self.paste)
+        #self.code_box.bind('<Control-v>', self.paste)
+        #self.code_box.bind('<Control-c>', self.copy)
 
         self.assemble_button = Button(self.root, text="Assemble", command=self.assemble)
         self.assemble_button.place(relx=1, x=-2, y=2, anchor=NE)

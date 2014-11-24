@@ -25,7 +25,8 @@ class Assembler:
         for line in new_program:
             l = line.split(",")
             if l[0] == "BEQ":
-                l[-1] = str(labels[l[-1]] - curr_address - 2)
+                if l[-1] in labels:
+                    l[-1] = str(labels[l[-1]] - curr_address - 2)
             _new_program.append(",".join(l))
             curr_address += 2
         return "\n".join(_new_program)

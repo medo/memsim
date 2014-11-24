@@ -15,6 +15,10 @@ class BaseMemory:
         pass
 
     @abstractmethod
+    def write_block(self, line_address, data):
+        pass
+
+    @abstractmethod
     def get_hits(self):
         pass
 

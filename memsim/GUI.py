@@ -91,9 +91,14 @@ class GUI:
         #  End menu bar
         self.create_items()
 
+    def paste(self ,event):
+        text = self.code_box.selection_get(selection='CLIPBOARD')
+        self.code_box.insert('insert', text)
+
     def create_items(self):
         self.code_box = Text(self.root)
         self.code_box.place(relx=1, x=-235, y=0, anchor=NE)
+        self.code_box.bind('<Control-v>', self.paste)
 
         self.assemble_button = Button(self.root, text="Assemble", command=self.assemble)
         self.assemble_button.place(relx=1, x=-2, y=2, anchor=NE)

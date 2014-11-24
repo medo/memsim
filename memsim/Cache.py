@@ -79,20 +79,22 @@ class Cache(BaseMemory):
                     entry['dirty'] = 1
                     return cycles
 
+        print "gena ne write am miss -> " + str(self.__hit_cycles)
         if self.__write_miss_policy == WritePolicy.write_allocate:
             result = self.__parent_memory.get_line(address / self.__line_size)
+            print "-> " + str(result[0])
             result[1][address % self.__line_size] = value
-            self.__cache(address / self.__line_size, result[1])
+            cycles += self.__cache(address / self.__line_size, result[1])
             self.__parent_memory.write_block(address / self.__line_size, result[1])
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
-            self.__parent_memory.write_in_address(address, value)
+            cycles += self.__parent_memory.write_in_address(address, value)
 
 
         self.__misses += 1
         result = self.__parent_memory.get_line(address)
         self.__cache(address, result[1])
-        return result[0] + self.__hit_cycles
+        return cycles
 
 
     def get_misses(self):
@@ -123,7 +125,7 @@ class Cache(BaseMemory):
         self.__misses += 1
         result = self.__parent_memory.get_line(address)
         cycles = self.__cache(address, result[1])
-        return [result[0] + self.__hit_cycles, result[1]]
+        return (result[0] + cycles, result[1])
 
     def __cache(self, address, data, dirty=0):
         bucket_index = address % self.__associaticity_level
@@ -135,16 +137,17 @@ class Cache(BaseMemory):
             else:
                 last_accessed = entry if entry['accessed_at'] < last_accessed['accessed_at'] else last_accessed
 
-        cycles = 0
+        cycles = self.__hit_cycles
         if last_accessed.get('dirty', 0) == 1:
             cycles += self.__parent_memory.write_block(address, last_accessed['data'])
+
         last_accessed['valid'] = 1
         last_accessed['data'] = data
         last_accessed['accessed_at'] = self.__entry_count
         self.__entry_count += 1
         last_accessed['tag'] = address / self.__associaticity_level
         last_accessed['dirty'] = dirty
-
+        return cycles
 
 
 

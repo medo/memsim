@@ -21,8 +21,10 @@ class MainMemory(BaseMemory):
         self.hits += 1
         return (self.__latency, self.memory[address])
 
+
     def write_in_address(self, address, value):
-        self.memory[address * 2] = value
+        self.memory[address] = value
+        print self.memory
         self.hits += 1
         return self.__latency
 

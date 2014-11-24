@@ -76,7 +76,7 @@ class Cache(BaseMemory):
 
                 entry['data'][index] = value
                 if self.__write_hit_policy == WritePolicy.write_through:
-                    return cycles + self.__parent_memory.write_in_address(word, value)
+                    return cycles + self.__parent_memory.write_in_address(word * 2, value)
                 elif self.__write_hit_policy == WritePolicy.write_back:
                     entry['dirty'] = 1
                     return cycles
@@ -84,13 +84,13 @@ class Cache(BaseMemory):
         print "gena ne write am miss -> " + str(self.__hit_cycles)
         if self.__write_miss_policy == WritePolicy.write_allocate:
             result = self.__parent_memory.get_line(word / self.__line_size)
-            print "-> " + str(result[0])
-            result[1][address % self.__line_size] = value
-            cycles += self.__cache(address / self.__line_size, result[1])
+            print "-> " + str(result[1])
+            result[1][word % self.__line_size] = value
+            cycles += self.__cache(word / self.__line_size, result[1])
             self.__parent_memory.write_block(word / self.__line_size, result[1])
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
-            cycles += self.__parent_memory.write_in_address(word, value)
+            cycles += self.__parent_memory.write_in_address(word * 2, value)
 
 
         self.__misses += 1

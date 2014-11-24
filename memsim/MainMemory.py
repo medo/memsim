@@ -19,7 +19,7 @@ class MainMemory(BaseMemory):
         return (self.__latency, self.memory[address])
 
     def write_in_address(self, address, value):
-        self.memory[address] = value
+        self.memory[address * 2] = value
         return self.__latency
 
     def get_misses(self):
@@ -34,9 +34,11 @@ class MainMemory(BaseMemory):
     def get_line(self, address):
         result = [None] * self.__line_size
         j = 0
+        address *= self.__line_size * 2
         print address
-        for i in range(address, address + self.__line_size):
-            result[j] = self.memory.get(i * 2, 0)
+        print range(address, address + self.__line_size * 2, 2)
+        for i in range(address, address + self.__line_size * 2, 2):
+            result[j] = self.memory.get(i, 0)
             j += 1
         return (self.__latency, result)
 

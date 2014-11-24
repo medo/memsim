@@ -32,13 +32,14 @@ class Cache(BaseMemory):
     def get_address(self, address):
         word = address / 2
         result = self.get_line(word)
-
-        return [result[0], result[1][address % self.__line_size]]
+        print result[1]
+        return [result[0], result[1][word % self.__line_size]]
 
     def write_block(self, line_address, data):
         tag = line_address / self.__associaticity_level
         bucket_index = line_address % self.__associaticity_level
         cycles = self.__hit_cycles
+
         for entry in self.__bucket[bucket_index]:
             if entry['valid'] == 1 and entry['tag'] == tag:
                 entry['accessed_at'] = self.__entry_count
@@ -61,7 +62,7 @@ class Cache(BaseMemory):
 
     def write_in_address(self, address, value):
         word = address / 2
-        index = word % self.__line_size
+        index = address % self.__line_size
         address =  word / self.__line_size
         tag = address / self.__associaticity_level
         bucket_index = address % self.__associaticity_level
@@ -72,23 +73,24 @@ class Cache(BaseMemory):
                 entry['accessed_at'] = self.__entry_count
                 self.__entry_count += 1
                 self.__hits += 1
+
                 entry['data'][index] = value
                 if self.__write_hit_policy == WritePolicy.write_through:
-                    return cycles + self.__parent_memory.write_in_address(address, value)
+                    return cycles + self.__parent_memory.write_in_address(word, value)
                 elif self.__write_hit_policy == WritePolicy.write_back:
                     entry['dirty'] = 1
                     return cycles
 
         print "gena ne write am miss -> " + str(self.__hit_cycles)
         if self.__write_miss_policy == WritePolicy.write_allocate:
-            result = self.__parent_memory.get_line(address / self.__line_size)
+            result = self.__parent_memory.get_line(word / self.__line_size)
             print "-> " + str(result[0])
             result[1][address % self.__line_size] = value
             cycles += self.__cache(address / self.__line_size, result[1])
-            self.__parent_memory.write_block(address / self.__line_size, result[1])
+            self.__parent_memory.write_block(word / self.__line_size, result[1])
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
-            cycles += self.__parent_memory.write_in_address(address, value)
+            cycles += self.__parent_memory.write_in_address(word, value)
 
 
         self.__misses += 1
@@ -123,7 +125,7 @@ class Cache(BaseMemory):
 
         print "Cache miss"
         self.__misses += 1
-        result = self.__parent_memory.get_line(word)
+        result = self.__parent_memory.get_line(word / self.__line_size)
         cycles = self.__cache(address, result[1])
 
         return (result[0] + cycles, result[1])

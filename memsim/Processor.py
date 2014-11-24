@@ -125,7 +125,7 @@ class Processor:
     
     def multiply(self, destination, source1, source2):
         res = 0
-        s1 = self.register_file.get(source1)
+        s1 = int(self.register_file.get(source1))
         s2 = self.register_file.get(source2)
         while s2 != 0:
             res += s1

@@ -36,6 +36,13 @@ class GUI:
         for line in assembled_code:
             self.instruction_store.write_in_address(curr_address, line)
             curr_address += 2
+
+        data = self.data_box.get(1.0, END).split("\n")
+        for d in data:
+            if d != "":
+                dd = d.split(" ")
+                self.data_store.write_in_address(int(dd[0]), dd[1])
+
         self.update()
         self.progress_button.config(state='normal')
         self.execute_button.config(state='normal')
@@ -47,7 +54,12 @@ class GUI:
         self.pc_label.set(self.processor.pc)
         for i in range(8):
             self.register_labels[i].set(self.processor.register_file.get(i))
-        
+        self.data_box.delete(1.0, END)
+        memory = self.data_store.get_memory()
+        for key in sorted(memory.keys()):
+            if memory[key] != "":
+                self.data_box.insert(END, str(key) + " " + str(memory[key]) + "\n")
+
     def prepare_data(self):
         print "Enter Start address : "
         self.start_address = int(raw_input())
@@ -82,7 +94,7 @@ class GUI:
     def __init__(self):
         self.prepare_data()
         self.root = Tk()  # Ordinary window with title bar and decorations provided by window manager
-        self.root.geometry("800x430")  # Set size of the displayed window
+        self.root.geometry("800x630")  # Set size of the displayed window
         self.root.wm_title("Memsim")
 
         # Begin menu bar
@@ -106,8 +118,10 @@ class GUI:
     def create_items(self):
         self.code_box = Text(self.root)
         self.code_box.place(relx=1, x=-235, y=0, anchor=NE)
-        #self.code_box.bind('<Control-v>', self.paste)
-        #self.code_box.bind('<Control-c>', self.copy)
+
+        self.data_box = Text(self.root)
+        self.data_box.place(relx=1, x=-235, y=400, anchor=NE)
+        self.data_box.config(height = 10)
 
         self.assemble_button = Button(self.root, text="Assemble", command=self.assemble)
         self.assemble_button.place(relx=1, x=-2, y=2, anchor=NE)

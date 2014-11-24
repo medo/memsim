@@ -44,3 +44,6 @@ class MainMemory(BaseMemory):
             self.memory[i] = data[j]
             j += 1
         return self.__latency
+
+    def get_memory(self):
+        return self.memory

@@ -8,4 +8,4 @@ class RegisterFile:
 
     def set(self, idx, value):
         if idx != 0:
-            self.data[idx] = value
+            self.data[idx] = int(value)

@@ -23,9 +23,16 @@ class GUI:
     def assemble(self):
 
         self.memory = MainMemory(64*1024, self.memory_access_time, 2)
-        self.processor = Processor(self.memory, self.memory, self.start_address)
-        self.instruction_store = self.memory
-        self.data_store = self.memory
+        
+        iprev = self.memory
+        dprev = self.memory
+        for i in reversed(range(self.cache_levels)):
+            d = self.caches[i]
+            iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
+            dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
+        self.processor = Processor(dprev, iprev, self.start_address)
+        self.instruction_store = iprev
+        self.data_store = dprev
 
         code = self.code_box.get(1.0, END)
         self.code_box.delete(1.0, END)
@@ -56,7 +63,7 @@ class GUI:
             self.register_labels[i].set(self.processor.register_file.get(i))
         self.data_box.delete(1.0, END)
         memory = self.data_store.get_memory()
-        for key in sorted(memory.keys()):
+        for key in sorted(self.memory.keys()):
             if memory[key] != "":
                 self.data_box.insert(END, str(key) + " " + str(memory[key]) + "\n")
 
@@ -68,27 +75,26 @@ class GUI:
         print "Main memory access time : "
         self.memory_access_time = int(raw_input())
         
-        #print "Number of caches : "
-        #caches = int(raw_input())
-        #dprev = self.memory
-        #self.dcaches = []
+        print "Number of caches : "
+        self.cache_levels = int(raw_input())
+        
+        if self.cache_levels > 0:
+            print "Enter cache line size : "
+            cache_block_size = int(raw_input())
 
-        #iprev = self.memory
-        #self.icaches = []
-        #for i in range(caches):
-            #print "L" + str(i) + " Cache geometry : "
-            #s,l,m = [ int(raw_input()) for j in range(3) ]
-            #print "L" + str(i) + " hit cycles : "
-            #hc = int(raw_input())
-
-            #self.dcaches.append(Cache(s,l,m,1,3,hc,dprev))
-            #self.icaches.append(Cache(s,l,m,1,3,hc,iprev))
-            #dprev = self.dcaches[i]
-            #iprev = self.icaches[i]
-        #self.processor = Processor(dprev, iprev, self.start_address)
-        #self.instruction_store = iprev
-        #self.data_store = dprev
-
+        self.caches = []
+        for i in range(self.cache_levels):
+            print "L" + str(i) + " Cache size : "
+            s = int(raw_input())
+            print "L" + str(i) + " associativity level : "
+            m = int(raw_input())
+            print "L" + str(i) + " hit cycles : "
+            hc = int(raw_input())
+            print "L" + str(i) + " Write through(0), Write Back(1) :"
+            wh = int(raw_input())
+            print "L" + str(i) + " Write allocate(2), Write arround(3) :"
+            wm = int(raw_input())
+            self.caches.append([s,cache_block_size,m,wh,wm,hc])
         
         
     def __init__(self):

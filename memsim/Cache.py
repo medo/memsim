@@ -4,7 +4,7 @@ class Cache(BaseMemory):
 
     '''
     cache_size in Bytes
-    line_size in Bytes
+    line_size is the number of words
     '''
 
     def __init__(self, cache_size, line_size, associativity_level, write_hit_policy, write_miss_policy, hit_cycles, miss_cycles, parent_memory=None):
@@ -13,11 +13,22 @@ class Cache(BaseMemory):
         self.__highest_address = cache_size / line_size
         self.__associaticity_level = associativity_level
         self.__entry_count = 0
+        self.__hit_cycles = hit_cycles
+        self.__miss_cycles = miss_cycles
+        self.__line_size = line_size
         buckets = (cache_size / line_size) / associativity_level
-        self.__bucket = [[{'valid': 0}] * associativity_level] * buckets
+        self.__bucket = [None] * buckets
+        for i in range(0, buckets):
+            tmp = [None] * associativity_level
+            for j in range(0, associativity_level):
+                tmp[j] = {'valid': 0}
+            self.__bucket[i] = tmp
 
     def get_address(self, address):
-        pass
+        word = address / 2
+        line = self.get_line(word / self.__line_size)
+        cycles = 0
+        return [cycles, line[address % self.__line_size]]
 
     def write_in_address(self, address, value):
         pass
@@ -36,19 +47,35 @@ class Cache(BaseMemory):
         bucket_index = address % self.__associaticity_level
         found = False
         for entry in self.__bucket[bucket_index]:
-            if entry['valid'] == 1 and entry['tag'] == tag:
+            if entry != None and entry['valid'] == 1 and entry['tag'] == tag:
                 entry['accessed_at'] = self.__entry_count
                 self.__entry_count += 1
-                found = True
-
-        if not found:
-            line = self.parent_memory.get_line(address)
-            self.__cache(address, line)
-
-    def __cache(self, address, line):
-        pass
+                print "Cache hit"
+                return [self.__hit_cycles, entry['data']]
 
 
-m = Cache(1024 * 1024, 1, 10, 10, 10, 10, 10, -1)
-c = Cache(1024, 1, 10, 10, 10, 10, 10, m)
-print c.get_address(1)
+        print "Cache miss"
+        result = self.parent_memory.get_line(address)
+        self.__cache(address, result[1])
+        return [result[0] + self.__miss_cycles, result[1]]
+
+    def __cache(self, address, data, dirty=0):
+        bucket_index = address % self.__associaticity_level
+        last_accessed = {'accessed_at': 99999999999}
+        for entry in self.__bucket[bucket_index]:
+            if entry['valid'] == 0:
+                last_accessed = entry
+                break
+            else:
+                last_accessed = entry if entry['accessed_at'] < last_accessed['accessed_at'] else last_accessed
+
+        last_accessed['valid'] = 1
+        last_accessed['data'] = data
+        last_accessed['accessed_at'] = self.__entry_count
+        self.__entry_count += 1
+        last_accessed['tag'] = address / self.__associaticity_level
+        last_accessed['dirty'] = dirty
+
+
+
+

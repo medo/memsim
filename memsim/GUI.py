@@ -2,13 +2,10 @@ from Tkinter import *
 from MainMemory import MainMemory
 from Cache import Cache
 from Processor import Processor
+from Assembler import Assembler
 
 class GUI:
     
-    def print_hello(self):
-        # lbl1["text"]= "Hello World"
-        return
-
     def execute(self):
         print "HI"
 
@@ -16,6 +13,9 @@ class GUI:
         print "HH"
 
     def assemble(self):
+        code = self.code_box.get(1.0, END)
+        self.code_box.delete(1.0, END)
+        self.code_box.insert(END, Assembler.assemble(code, self.start_address))
         self.update()
 
     def update(self):
@@ -32,7 +32,7 @@ class GUI:
 
         print "Main memory access time : "
         memory_access_time = int(raw_input())
-        self.memory = MainMemory()
+        self.memory = MainMemory(64*1024, memory_access_time, 2)
         
         print "Number of caches : "
         caches = int(raw_input())
@@ -46,14 +46,14 @@ class GUI:
             s,l,m = [ int(raw_input()) for j in range(3) ]
             print "L" + str(i) + " hit cycles : "
             hc = int(raw_input())
-            print "L" + str(i) + " miss cycles : "
-            mc = int(raw_input())
 
-            self.dcaches.append(Cache(s,l,m,1,3,hc,mc,dprev))
-            self.icaches.append(Cache(s,l,m,1,3,hc,mc,iprev))
+            self.dcaches.append(Cache(s,l,m,1,3,hc,dprev))
+            self.icaches.append(Cache(s,l,m,1,3,hc,iprev))
             dprev = self.dcaches[i]
             iprev = self.icaches[i]
         self.processor = Processor(dprev, iprev, self.start_address)
+        self.instruction_store = iprev
+        self.data_store = dprev
 
         
         
@@ -73,7 +73,8 @@ class GUI:
         self.create_items()
 
     def create_items(self):
-        self.code_box = Text(self.root).place(relx=1, x=-235, y=0, anchor=NE)
+        self.code_box = Text(self.root)
+        self.code_box.place(relx=1, x=-235, y=0, anchor=NE)
 
         Button(self.root, text="Assemble", command=self.assemble).place(relx=1, x=-2, y=2, anchor=NE)
 

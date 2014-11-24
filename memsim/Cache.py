@@ -123,8 +123,9 @@ class Cache(BaseMemory):
 
         print "Cache miss"
         self.__misses += 1
-        result = self.__parent_memory.get_line(address)
+        result = self.__parent_memory.get_line(word)
         cycles = self.__cache(address, result[1])
+
         return (result[0] + cycles, result[1])
 
     def __cache(self, address, data, dirty=0):

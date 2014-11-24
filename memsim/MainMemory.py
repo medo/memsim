@@ -12,6 +12,7 @@ class MainMemory(BaseMemory):
         self.memory = {}
         self.__latency = latency
         self.__line_size = line_size
+        self.memory[30] = 15
 
 
     def get_address(self, address):
@@ -33,8 +34,9 @@ class MainMemory(BaseMemory):
     def get_line(self, address):
         result = [None] * self.__line_size
         j = 0
-        for i in range(address, address + self.__line_size * 2, 2):
-            result[j] = self.memory.get(i, 0)
+        print address
+        for i in range(address, address + self.__line_size):
+            result[j] = self.memory.get(i * 2, 0)
             j += 1
         return (self.__latency, result)
 

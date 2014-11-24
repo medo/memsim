@@ -26,7 +26,6 @@ class Processor:
         self.cycles += 1
         if self.reading == None:
             self.reading = self.instruction_store.get_address(self.pc)
-            print self.reading
             self.busy_for += self.reading[0]
             if self.reading[1] in ["", 0, None]:
                 self.cycles -=1
@@ -41,6 +40,7 @@ class Processor:
                 print "Instructions Count : " + str(self.instructions_count)
 
                 return False
+            print "------> " + str(self.pc) + " " + str(self.reading)
         if self.current_instruction == None :
             if self.busy_for > 0:
                 self.busy_for -= 1
@@ -91,7 +91,7 @@ class Processor:
         base_address = self.register_file.get(base_address_register)
         data = self.data_store.get_address(base_address + offset)
         self.busy_for += data[0]
-        print data
+        print "//////// " + str(data)
         self.register_file.set(destination, data[1])
 
     def store(self, source, base_address_register, offset):

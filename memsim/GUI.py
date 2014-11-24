@@ -22,7 +22,7 @@ class GUI:
 
     def assemble(self):
 
-        self.memory = MainMemory(64*1024, self.memory_access_time, 2)
+        self.memory = MainMemory(64*1024, self.memory_access_time, self.cache_block_size)
         
         iprev = self.memory
         dprev = self.memory
@@ -81,7 +81,7 @@ class GUI:
         
         if self.cache_levels > 0:
             print "Enter cache line size : "
-            cache_block_size = int(raw_input())
+            self.cache_block_size = int(raw_input())
 
         self.caches = []
         for i in range(self.cache_levels):
@@ -95,7 +95,7 @@ class GUI:
             wh = int(raw_input())
             print "L" + str(i) + " Write allocate(2), Write arround(3) :"
             wm = int(raw_input())
-            self.caches.append([s,cache_block_size,m,wh,wm,hc])
+            self.caches.append([s,self.cache_block_size,m,wh,wm,hc])
         
         
     def __init__(self):

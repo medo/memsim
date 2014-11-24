@@ -62,7 +62,7 @@ class GUI:
         for i in range(8):
             self.register_labels[i].set(self.processor.register_file.get(i))
         self.data_box.delete(1.0, END)
-        memory = self.data_store.get_memory()
+        memory = self.memory.get_memory()
         for key in sorted(self.memory.keys()):
             if memory[key] != "":
                 self.data_box.insert(END, str(key) + " " + str(memory[key]) + "\n")

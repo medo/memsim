@@ -1,4 +1,5 @@
-from memsim import *
+from InstructionType import InstructionType
+from RegisterFile import RegisterFile
 class Processor:
 
     NUMBER_OF_REGISTERS = 8
@@ -9,17 +10,12 @@ class Processor:
         self.instruction_store = instruction_store
         self.cycles = 0
         self.busy_for = 0
-        self.instruction_read = False
-        self.instruction_ready_for_execution = False
-        self.busy_execute = 0
-        self.register_file = RegisterFile(NUMBER_OF_REGISTERS)
+        self.register_file = RegisterFile(self.NUMBER_OF_REGISTERS)
         self.pc = start_address
         self.current_instruction = None
 
     def progress(self):
         self.cycles += 1
-        if not self.instruction_read:
-            self.current_instruction = InstructionParser.parse(instruction_store.get(self.pc))
         #if busy_for == 0:
         #if self.current_instruction.type_ == InstructionType.load or self.current_instruction.type_ == InstructionType.store:
 
@@ -94,5 +90,3 @@ class Processor:
             res &= MASK
             s2 -= 1
         self.register_file.set(destination, res)
-        
-

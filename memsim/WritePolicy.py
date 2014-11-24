@@ -1,5 +1,4 @@
-from enum import Enum
-class WritePolicy(Enum):
+class WritePolicy:
     write_through = 1
     write_back = 2
     write_allocate = 3

@@ -1,5 +1,4 @@
-from enum import Enum
-class InstructionType(Enum):
+class InstructionType:
     load = 1
     store = 2
     jump = 3

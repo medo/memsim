@@ -152,5 +152,6 @@ class Cache(BaseMemory):
         last_accessed['dirty'] = dirty
         return cycles
 
-
-
+    def print_logs(self, level):
+        print "L"+ str(level) +", hits : " + str(self.get_hits()) + " -- misses : " + str(self.get_misses())
+        self.__parent_memory.print_logs(level+1)

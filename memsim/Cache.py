@@ -86,7 +86,7 @@ class Cache(BaseMemory):
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
             self.__parent_memory.write_in_address(address, value)
-            
+
 
         print "Cache miss"
         self.__misses += 1

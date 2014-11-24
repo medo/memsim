@@ -1,7 +1,10 @@
 import re
+from InstructionType import InstructionType
+from Instruction import Instruction
 class InstructionParser:
     
-    def parse(cls, line):
+    @staticmethod
+    def parse(line):
         reg_a = -1
         reg_b = -1
         reg_c = -1
@@ -10,33 +13,33 @@ class InstructionParser:
 
         if re.match("(LW|SW),([^, ]+),([^, ]+),([^, ]+)", line):
             m = re.match("(LW|SW),([^, ]+),([^, ]+),([^, ]+)", line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))
             imm = int(m.group(4))
         elif re.match("(JMP),([^, ]+),([^, ]+)",line):
             m = re.match("(JMP),([^, ]+),([^, ]+)",line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             imm = int(m.group(3))
         elif re.match("(BEQ|ADDI),([^, ]+),([^, ]+),([^, ]+)",line):
             m = re.match("(BEQ|ADDI),([^, ]+),([^, ]+),([^, ]+)",line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))
             imm = int(m.group(4))
         elif re.match("(JALR),([^, ]+),([^, ]+)",line):
             m = re.match("(JALR),([^, ]+),([^, ]+)",line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))
         elif re.match("(RET),([^, ]+)",line):
             m = re.match("(RET),([^, ]+)",line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
         elif re.match("(ADD|SUB|ADDI|NAND),([^, ]+),([^, ]+),([^, ]+)",line):
             m = re.match("(ADD|SUB|ADDI|NAND),([^, ]+),([^, ]+),([^, ]+)",line)
-            type_ = get_type(m.group(1))
+            type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))
             reg_c = int(m.group(4))
@@ -46,8 +49,9 @@ class InstructionParser:
         inst.set_reg_c(reg_c)
         inst.set_imm(imm)
         return inst
-
-    def get_type(cls, command):
+    
+    @staticmethod
+    def get_type(command):
         return {
             "LW": InstructionType.load,
             "SW": InstructionType.store,

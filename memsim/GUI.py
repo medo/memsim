@@ -2,25 +2,45 @@ from Tkinter import *
 from MainMemory import MainMemory
 from Cache import Cache
 from Processor import Processor
+from Assembler import Assembler
 
 class GUI:
     
-    def print_hello(self):
-        # lbl1["text"]= "Hello World"
-        return
-
     def execute(self):
         print "HI"
 
     def progress(self):
-        print "HH"
+        ret = self.processor.progress()
+        if ret != False:
+            self.update()
+        else:
+            self.progress_button.config(state='disabled')
+            self.execute_button.config(state='disabled')
 
     def assemble(self):
+
+        self.memory = MainMemory(64*1024, self.memory_access_time, 2)
+        self.processor = Processor(self.memory, self.memory, self.start_address)
+        self.instruction_store = self.memory
+        self.data_store = self.memory
+
+        code = self.code_box.get(1.0, END)
+        self.code_box.delete(1.0, END)
+        assembled_code = Assembler.assemble(code, self.start_address)
+        self.code_box.insert(END, assembled_code)
+        assembled_code = assembled_code.split("\n")
+        curr_address = self.start_address
+        for line in assembled_code:
+            self.instruction_store.write_in_address(curr_address, line)
+            curr_address += 2
         self.update()
+        self.progress_button.config(state='normal')
+        self.execute_button.config(state='normal')
+
 
     def update(self):
         self.no_of_cycles.set(self.processor.cycles)
-        self.no_of_instrutions.set(self.processor.cycles)
+        self.no_of_instrutions.set(self.processor.get_instruction_number())
         self.pc_label.set(self.processor.pc)
         for i in range(8):
             self.register_labels[i].set(self.processor.register_file.get(i))
@@ -31,29 +51,28 @@ class GUI:
 
 
         print "Main memory access time : "
-        memory_access_time = int(raw_input())
-        self.memory = MainMemory()
+        self.memory_access_time = int(raw_input())
         
-        print "Number of caches : "
-        caches = int(raw_input())
-        dprev = self.memory
-        self.dcaches = []
+        #print "Number of caches : "
+        #caches = int(raw_input())
+        #dprev = self.memory
+        #self.dcaches = []
 
-        iprev = self.memory
-        self.icaches = []
-        for i in range(caches):
-            print "L" + str(i) + " Cache geometry : "
-            s,l,m = [ int(raw_input()) for j in range(3) ]
-            print "L" + str(i) + " hit cycles : "
-            hc = int(raw_input())
-            print "L" + str(i) + " miss cycles : "
-            mc = int(raw_input())
+        #iprev = self.memory
+        #self.icaches = []
+        #for i in range(caches):
+            #print "L" + str(i) + " Cache geometry : "
+            #s,l,m = [ int(raw_input()) for j in range(3) ]
+            #print "L" + str(i) + " hit cycles : "
+            #hc = int(raw_input())
 
-            self.dcaches.append(Cache(s,l,m,1,3,hc,mc,dprev))
-            self.icaches.append(Cache(s,l,m,1,3,hc,mc,iprev))
-            dprev = self.dcaches[i]
-            iprev = self.icaches[i]
-        self.processor = Processor(dprev, iprev, self.start_address)
+            #self.dcaches.append(Cache(s,l,m,1,3,hc,dprev))
+            #self.icaches.append(Cache(s,l,m,1,3,hc,iprev))
+            #dprev = self.dcaches[i]
+            #iprev = self.icaches[i]
+        #self.processor = Processor(dprev, iprev, self.start_address)
+        #self.instruction_store = iprev
+        #self.data_store = dprev
 
         
         
@@ -72,14 +91,25 @@ class GUI:
         #  End menu bar
         self.create_items()
 
+    def paste(self ,event):
+        text = self.code_box.selection_get(selection='CLIPBOARD')
+        self.code_box.insert('insert', text)
+
     def create_items(self):
-        self.code_box = Text(self.root).place(relx=1, x=-235, y=0, anchor=NE)
+        self.code_box = Text(self.root)
+        self.code_box.place(relx=1, x=-235, y=0, anchor=NE)
+        self.code_box.bind('<Control-v>', self.paste)
 
-        Button(self.root, text="Assemble", command=self.assemble).place(relx=1, x=-2, y=2, anchor=NE)
+        self.assemble_button = Button(self.root, text="Assemble", command=self.assemble)
+        self.assemble_button.place(relx=1, x=-2, y=2, anchor=NE)
 
-        Button(self.root, text="Execute", command=self.execute).place(relx=1, x=-2, y=32, anchor=NE)
+        self.execute_button = Button(self.root, text="Execute", command=self.execute)
+        self.execute_button.place(relx=1, x=-2, y=32, anchor=NE)
+        self.execute_button.config(state='disabled')
 
-        Button(self.root, text="Run Single Cycle", command=self.progress).place(relx=1, x=-90, y=2, anchor=NE)
+        self.progress_button = Button(self.root, text="Run Single Cycle", command=self.progress)
+        self.progress_button.place(relx=1, x=-90, y=2, anchor=NE)
+        self.progress_button.config(state='disabled')
 
         Label(self.root, text="No. Of Cycles:").place(relx=1, x=-140, y=70, anchor=NE)
         

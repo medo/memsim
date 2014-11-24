@@ -1,5 +1,6 @@
 from BaseMemory import BaseMemory
 from WritePolicy import WritePolicy
+from InstructionParser import InstructionParser
 
 class Cache(BaseMemory):
 

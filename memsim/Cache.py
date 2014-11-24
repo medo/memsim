@@ -30,9 +30,9 @@ class Cache(BaseMemory):
 
     def get_address(self, address):
         word = address / 2
-        line = self.get_line(word)
-        cycles = 0
-        return [cycles, line[address % self.__line_size]]
+        result = self.get_line(word)
+
+        return [result[0], result[1][address % self.__line_size]]
 
     def write_block(self, line_address, data):
         tag = line_address / self.__associaticity_level

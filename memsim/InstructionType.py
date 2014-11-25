@@ -10,3 +10,4 @@ class InstructionType:
     add_immediate = 9
     nand = 10
     multiply = 11
+    halt = 12

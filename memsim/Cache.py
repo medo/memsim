@@ -21,7 +21,8 @@ class Cache(BaseMemory):
         self.__write_miss_policy = write_miss_policy
         self.__write_hit_policy = write_hit_policy
         self.__line_size = line_size
-        buckets = (cache_size / line_size) / associativity_level
+        self.__cache_entries = cache_size/(2*line_size)
+        buckets = (cache_size / (2*line_size)) / associativity_level
         self.__bucket = [None] * buckets
         for i in range(0, buckets):
             tmp = [None] * associativity_level
@@ -64,8 +65,8 @@ class Cache(BaseMemory):
         word = address / 2
         index = address % self.__line_size
         address =  word / self.__line_size
-        tag = address / self.__associaticity_level
-        bucket_index = address % self.__associaticity_level
+        tag = address / (self.__cache_entries / self.__associaticity_level)
+        bucket_index = address % (self.__cache_entries / self.__associaticity_level)
         found = False
         cycles = self.__hit_cycles
         for entry in self.__bucket[bucket_index]:
@@ -111,9 +112,10 @@ class Cache(BaseMemory):
     def get_line(self, address):
         word = address
         address /= self.__line_size
-        tag = address / self.__associaticity_level
-        bucket_index = address % self.__associaticity_level
+        tag = address / (self.__cache_entries / self.__associaticity_level)
+        bucket_index = address % (self.__cache_entries / self.__associaticity_level)
         found = False
+        print self.__bucket
         for entry in self.__bucket[bucket_index]:
             if entry != None and entry['valid'] == 1 and entry['tag'] == tag:
                 entry['accessed_at'] = self.__entry_count
@@ -131,7 +133,7 @@ class Cache(BaseMemory):
         return (result[0] + cycles, result[1])
 
     def __cache(self, address, data, dirty=0):
-        bucket_index = address % self.__associaticity_level
+        bucket_index = address % (self.__cache_entries / self.__associaticity_level)
         last_accessed = {'accessed_at': 99999999999}
         for entry in self.__bucket[bucket_index]:
             if entry['valid'] == 0:
@@ -148,7 +150,7 @@ class Cache(BaseMemory):
         last_accessed['data'] = data
         last_accessed['accessed_at'] = self.__entry_count
         self.__entry_count += 1
-        last_accessed['tag'] = address / self.__associaticity_level
+        last_accessed['tag'] = address / (self.__cache_entries / self.__associaticity_level)
         last_accessed['dirty'] = dirty
         return cycles
 

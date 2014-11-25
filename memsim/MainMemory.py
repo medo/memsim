@@ -12,7 +12,6 @@ class MainMemory(BaseMemory):
         self.memory = {}
         self.__latency = latency
         self.__line_size = line_size
-        self.memory[30] = 15
         self.hits = 0
         self.misses = 0
 

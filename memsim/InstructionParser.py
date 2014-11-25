@@ -43,6 +43,9 @@ class InstructionParser:
             reg_a = int(m.group(2))
             reg_b = int(m.group(3))
             reg_c = int(m.group(4))
+        elif re.match("(HALT)",line):
+            m = re.match("(HALT)",line)
+            type_ = InstructionParser.get_type(m.group(1))
         inst = Instruction(type_)
         inst.set_reg_a(reg_a)
         inst.set_reg_b(reg_b)
@@ -63,5 +66,6 @@ class InstructionParser:
             "SUB": InstructionType.subtract,
             "ADDI": InstructionType.add_immediate,
             "NAND": InstructionType.nand,
-            "MUL": InstructionType.multiply
+            "MUL": InstructionType.multiply,
+            "HALT": InstructionType.halt
         }[command]

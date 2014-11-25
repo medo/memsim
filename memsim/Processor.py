@@ -86,6 +86,7 @@ class Processor:
         if instruction.type_ == InstructionType.add_immediate: self.add_immediate(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.nand: self.nand(instruction.reg_a, instruction.reg_b, instruction.reg_c)
         if instruction.type_ == InstructionType.multiply: self.multiply(instruction.reg_a, instruction.reg_b, instruction.reg_c)
+        if instruction.type_ == InstructionType.halt: self.halt()
 
     def load(self, destination, base_address_register, offset):
         base_address = self.register_file.get(base_address_register)
@@ -145,6 +146,9 @@ class Processor:
             res &= self.MASK
             s2 -= 1
         self.register_file.set(destination, res)
+    
+    def halt(self):
+        self.stopped = True
 
     def get_instruction_number(self):
         return (self.pc - self.start_address) / 2

@@ -8,8 +8,8 @@ class GUI:
     
     def execute(self):
         self.processor.execute_all()
-        self.progress_button.config(state='normal')
-        self.execute_button.config(state='normal')
+        self.progress_button.config(state='disabled')
+        self.execute_button.config(state='disabled')
         self.update()
 
     def progress(self):

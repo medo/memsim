@@ -6,7 +6,7 @@ class Assembler:
         program = program.split("\n")
         labels = {}
         curr_address = start_address
-        supported_instructions = [ "LW", "SW", "JMP", "BEQ", "JALR", "RET", "ADD", "SUB", "ADDI", "NAND", "MUL" ]
+        supported_instructions = [ "LW", "SW", "JMP", "BEQ", "JALR", "RET", "ADD", "SUB", "ADDI", "NAND", "MUL", "HALT" ]
         new_program = []
         for line in program:
             line = re.sub(", +",",",line)

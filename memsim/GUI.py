@@ -82,6 +82,8 @@ class GUI:
         if self.cache_levels > 0:
             print "Enter cache line size : "
             self.cache_block_size = int(raw_input())/2
+        else:
+            self.cache_block_size = 1
 
         self.caches = []
         for i in range(self.cache_levels):

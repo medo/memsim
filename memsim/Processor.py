@@ -113,7 +113,8 @@ class Processor:
 
     def jump_and_link(self, store_register, address_register):
         self.register_file.set(store_register, self.pc)
-        self.pc = address_register
+        s1 = self.register_file.get(address_register)
+        self.pc = s1
 
     def return_(self, source):
         self.pc = self.register_file.get(source)
@@ -149,6 +150,14 @@ class Processor:
     
     def halt(self):
         self.stopped = True
+        print ""
+        print "Data Cache : "
+        self.data_store.print_logs(0)
+        print ""
+        print "Instructions Cache : "
+        self.instruction_store.print_logs(0)
+        print ""
+        print "Instructions Count : " + str(self.instructions_count)
 
     def get_instruction_number(self):
         return (self.pc - self.start_address) / 2

@@ -26,7 +26,8 @@ class Processor:
         self.cycles += 1
         if self.reading == None:
             self.reading = self.instruction_store.get_address(self.pc)
-            self.busy_for += self.reading[0]
+            #self.busy_for += self.reading[0]
+            self.busy_for = 0
             if self.reading[1] in ["", 0, None]:
                 self.cycles -=1
                 self.stopped = True
@@ -69,6 +70,7 @@ class Processor:
                         self.pc += 2
                         self.current_instruction = None
                         self.pending = False
+
     def execute_all(self):
         while self.progress() != False:
             pass

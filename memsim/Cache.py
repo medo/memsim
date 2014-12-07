@@ -88,7 +88,7 @@ class Cache(BaseMemory):
             print "-> " + str(result[1])
             result[1][word % self.__line_size] = value
             cycles += self.__cache(word / self.__line_size, result[1])
-            self.__parent_memory.write_block(word / self.__line_size, result[1])
+            #self.__parent_memory.write_block(word / self.__line_size, result[1])
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
             cycles += self.__parent_memory.write_in_address(word * 2, value)

@@ -90,6 +90,21 @@ class Processor:
         if instruction.type_ == InstructionType.multiply: self.multiply(instruction.reg_a, instruction.reg_b, instruction.reg_c)
         if instruction.type_ == InstructionType.halt: self.halt()
 
+    def get_functional_unit(self, instruction):
+        if instruction.type_ == InstructionType.load : return FunctionalUnit.load
+        if instruction.type_ == InstructionType.store: return FunctionalUnit.store
+        if instruction.type_ == InstructionType.jump: return FunctionalUnit.branches
+        if instruction.type_ == InstructionType.branch_if_equal: return FunctionalUnit.branches
+        if instruction.type_ == InstructionType.jump_and_link: return FunctionalUnit.branches
+        if instruction.type_ == InstructionType.return_: return FunctionalUnit.branches
+        if instruction.type_ == InstructionType.add: return FunctionalUnit.add
+        if instruction.type_ == InstructionType.subtract: return FunctionalUnit.add
+        if instruction.type_ == InstructionType.add_immediate: return FunctionalUnit.add
+        if instruction.type_ == InstructionType.nand: return FunctionalUnit.logical
+        if instruction.type_ == InstructionType.multiply: return FunctionalUnit.mult
+        if instruction.type_ == InstructionType.halt: self.halt()
+
+
     def load(self, destination, base_address_register, offset):
         base_address = self.register_file.get(base_address_register)
         data = self.data_store.get_address(base_address + offset)

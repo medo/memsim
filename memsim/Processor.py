@@ -100,22 +100,33 @@ class Processor:
                     self.read_more_instructions = False
                     break
                 if self.can_issue(instruction):
+                    self.instructions_count += 1
                     self.issue(instruction)
                     self.pc += 2
                 else:
                     break
 
-        if not any_change:
-            self.stopped = True
-        
-        print "\n\nReservation Stations :"
+        print "\n\n\n\nReservation Stations :"
         print self.reservation_stations
 
         print "Reorder Buffers :"
         print self.reorder_buffer
 
-        print "Register Status :"
+        print "\nRegister Status :"
         print self.register_stat
+
+
+        if not any_change:
+            self.stopped = True
+            print ""
+            print "Data Cache : "
+            self.data_store.print_logs(0)
+            print ""
+            print "Instructions Cache : "
+            self.instruction_store.print_logs(0)
+            print ""
+            print "Instructions Count : " + str(self.instructions_count)
+        
 
     def execute_all(self): 
         while self.progress() != False:
@@ -176,7 +187,6 @@ class Processor:
         current_reservation_station.progress = InstructionProgress.issue
 
     def execute_instruction(self, instruction):
-        self.instructions_count += 1
         if instruction.type_ == InstructionType.load : self.load(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.jump: self.jump(instruction.reg_a, instruction.imm)
@@ -229,17 +239,6 @@ class Processor:
 
     def return_(self, source):
         self.pc = self.register_file.get(source)
-
-    def halt(self):
-        self.stopped = True
-        print ""
-        print "Data Cache : "
-        self.data_store.print_logs(0)
-        print ""
-        print "Instructions Cache : "
-        self.instruction_store.print_logs(0)
-        print ""
-        print "Instructions Count : " + str(self.instructions_count)
 
     def get_instruction_number(self):
         return (self.pc - self.start_address) / 2

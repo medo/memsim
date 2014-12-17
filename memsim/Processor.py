@@ -10,7 +10,6 @@ import pdb
 class Processor:
 
     NUMBER_OF_REGISTERS = 8
-    MASK = 0xFFFF
 
     def __init__(self, data_store, instruction_store, start_address, number_of_ways, reservation_stations_types, reservation_station_cycles, reorder_buffer_size):
         self.data_store = data_store

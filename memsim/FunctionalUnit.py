@@ -5,4 +5,5 @@ class FunctionalUnit:
     logical = 4
     store = 5
     branches = 6
+    halt = 7
 

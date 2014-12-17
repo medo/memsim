@@ -46,7 +46,7 @@ class Processor:
                             reservation_station.progress = InstructionProgress.execute
                             reservation_station.start()
                 if reservation_station.progress == InstructionProgress.execute:
-                    reservation_station.progress()
+                    reservation_station.progress_single_cycle()
                     if reservation_station.finished():
                         reservation_station.execute()
                         reservation_station.progress = InstructionProgress.write
@@ -56,13 +56,13 @@ class Processor:
                         b = reservation_station.dest
                         reservation_station.set_busy(False)
                         for q in self.reservation_stations.entries.keys():
-                            for w in range(len(self.reservation_stations.entries[i])):
+                            for w in range(len(self.reservation_stations.entries[q])):
                                 tmp = self.reservation_stations.entries[q][w]
                                 if tmp.qj == b:
                                     tmp.vj = reservation_station.result
                                     tmp.qj = 0
                         for q in self.reservation_stations.entries.keys():
-                            for w in range(len(self.reservation_stations.entries[i])):
+                            for w in range(len(self.reservation_stations.entries[q])):
                                 tmp = self.reservation_stations.entries[q][w]
                                 if tmp.qk == b:
                                     tmp.vk = reservation_station.result
@@ -82,6 +82,12 @@ class Processor:
                 self.pc += 2
             else:
                 break
+        
+        print "Reservation Stations :"
+        print self.reservation_stations
+
+        print "Reorder Buffers :"
+        print self.reorder_buffer
 
     def execute_all(self): 
         while self.progress() != False:
@@ -93,7 +99,7 @@ class Processor:
     def issue(self, instruction):
         functional_unit = self.get_functional_unit(instruction)
         current_rob = self.reorder_buffer.get_current_empty()
-        current_reservation_station = self.reservation_stations.get(instruction.type_)
+        current_reservation_station = self.reservation_stations.get(functional_unit)
         if self.register_stat.busy(instruction.rs):
             h = self.register_stat.get(instruction.rs)
             if self.reorder_buffer.get(h).ready():
@@ -110,6 +116,7 @@ class Processor:
         current_rob.type_ = functional_unit
         current_rob.dest = instruction.rd
         current_rob.set_ready(False)
+        current_rob.set_empty(False)
 
         if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ]:
             if self.register_stat.busy(instruction.rt):
@@ -162,7 +169,7 @@ class Processor:
         if instruction.type_ == InstructionType.add_immediate: return FunctionalUnit.add
         if instruction.type_ == InstructionType.nand: return FunctionalUnit.logical
         if instruction.type_ == InstructionType.multiply: return FunctionalUnit.mult
-        if instruction.type_ == InstructionType.halt: self.halt()
+        if instruction.type_ == InstructionType.halt: return FunctionalUnit.halt
 
     def load(self, destination, base_address_register, offset):
         base_address = self.register_file.get(base_address_register)

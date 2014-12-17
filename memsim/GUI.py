@@ -32,9 +32,9 @@ class GUI:
             iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
             dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
         
-        types = [FunctionalUnit.add]
+        types = [FunctionalUnit.add, FunctionalUnit.add]
         cycles = { FunctionalUnit.add : 2 }
-        self.processor = Processor(dprev, iprev, self.start_address,2,types,cycles,4)
+        self.processor = Processor(dprev, iprev, self.start_address,1,types,cycles,4)
         self.instruction_store = iprev
         self.data_store = dprev
 

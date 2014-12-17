@@ -8,8 +8,9 @@ class ReorderBuffer:
         return not self.buffer_[self.tail].empty
 
     def get_current_empty(self):
+        ret = self.buffer_[self.tail]
         self.tail += 1
-        return self.buffer_[self.tail]
+        return ret
 
     def get(self, id_):
         return self.buffer_[id_]
@@ -19,13 +20,16 @@ class ReorderBuffer:
             if i.type_ == type_ and i.dest == dest:
                 return i
 
+    def __str__(self):
+        return "\n".join([ i.to_str() for i in self.buffer_ ])
+
 class ReorderBufferEntry:
     def __init__(self, id_):
         self.id_ = id_
         self.clear()
 
     def clear(self):
-        self.type_ = type
+        self.type_ = -1
         self.dest = -1
         self.value = 0
         self.ready = False
@@ -39,3 +43,9 @@ class ReorderBufferEntry:
 
     def get_id(self):
         return self.id_
+
+    def set_empty(self, value):
+        self.empty = value
+
+    def to_str(self):
+        return "Type:%s, dest:%s, value:%s, ready:%s, empty:%s" % (self.type_,self.dest,self.value,self.ready,self.empty)

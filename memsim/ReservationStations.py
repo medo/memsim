@@ -13,8 +13,16 @@ class ReservationStations:
     def get(self, type_):
         for i in range(len(self.entries[type_])):
             if not self.entries[type_][i].busy:
-                return i
+                return self.entries[type_][i]
         return -1
+
+    def __str__(self):
+        ret = ""
+        for i in self.entries.keys():
+            for j in range(len(self.entries[i])):
+                ret += self.entries[i][j].to_str() + "\n"
+        return ret
+
     
 class ReservationStationEntry:
     def __init__(self, type_, cycles):
@@ -35,9 +43,9 @@ class ReservationStationEntry:
         self.dest = 0
 
     def start(self):
-        self.cycles_left = cycles
+        self.cycles_left = self.cycles
 
-    def progress(self):
+    def progress_single_cycle(self):
         if self.cycles_left > 0:
             self.cycles_left -= 1
     
@@ -49,4 +57,10 @@ class ReservationStationEntry:
 
     def busy(self):
         return self.busy
+    
+    def to_str(self):
+        return self.__str__()
+
+    def __str__(self):
+        return "Type:%s, vj:%s, vk:%s, qj:%s, qk:%s, address:%s, cycles_left:%s, dest:%s, progress:%s" % (self.type_,self.vj,self.vk,self.qj,self.qk,self.address,self.cycles_left,self.dest,self.progress)
 

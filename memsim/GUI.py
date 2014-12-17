@@ -32,8 +32,8 @@ class GUI:
             iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
             dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
         
-        types = [FunctionalUnit.add, FunctionalUnit.add]
-        cycles = { FunctionalUnit.add : 2 }
+        types = [FunctionalUnit.add, FunctionalUnit.add, FunctionalUnit.load]
+        cycles = { FunctionalUnit.add : 2, FunctionalUnit.load : 0 }
         self.processor = Processor(dprev, iprev, self.start_address,1,types,cycles,4)
         self.instruction_store = iprev
         self.data_store = dprev
@@ -79,7 +79,7 @@ class GUI:
 
         #print "Main memory access time : "
         #self.memory_access_time = int(raw_input())
-        self.memory_access_time = 0
+        self.memory_access_time = 2
         
         #print "Number of caches : "
         #self.cache_levels = int(raw_input())

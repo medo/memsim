@@ -30,38 +30,40 @@ class Cache(BaseMemory):
                 tmp[j] = {'valid': 0}
             self.__bucket[i] = tmp
 
-    def get_address(self, address):
+    def get_address(self, address, no_effect=False):
         word = address / 2
-        result = self.get_line(word)
+        result = self.get_line(word, no_effect)
         print result[1]
         return [result[0], result[1][word % self.__line_size]]
 
-    def write_block(self, line_address, data):
+    def write_block(self, line_address, data, no_effect=False):
         tag = line_address / self.__associaticity_level
         bucket_index = line_address % self.__associaticity_level
         cycles = self.__hit_cycles
 
         for entry in self.__bucket[bucket_index]:
             if entry['valid'] == 1 and entry['tag'] == tag:
-                entry['accessed_at'] = self.__entry_count
-                self.__entry_count += 1
-                self.__hits += 1
-                entry['data'] = data
+                if not no_effect:
+                    entry['accessed_at'] = self.__entry_count
+                    self.__entry_count += 1
+                    self.__hits += 1
+                    entry['data'] = data
                 if self.__write_hit_policy == WritePolicy.write_through:
-                    return cycles + self.__parent_memory.write_block(line_address, data)
+                    return cycles + self.__parent_memory.write_block(line_address, data, no_effect)
                 elif self.__write_hit_policy == WritePolicy.write_back:
-                    entry['dirty'] = 1
+                    if not no_effect:
+                        entry['dirty'] = 1
                     return cycles
 
         if self.__write_miss_policy == WritePolicy.write_allocate:
-            cycles += self.__parent_memory.write_block(line_address, data)
+            cycles += self.__parent_memory.write_block(line_address, data, no_effect)
             self.__cache(line_address, data)
         elif self.__write_miss_policy == WritePolicy.write_around:
-            self.__parent_memory.write_block(line_address, data)
+            self.__parent_memory.write_block(line_address, data, no_effect)
 
 
 
-    def write_in_address(self, address, value):
+    def write_in_address(self, address, value, no_effect=False):
         word = address / 2
         index = address % self.__line_size
         address =  word / self.__line_size
@@ -71,32 +73,34 @@ class Cache(BaseMemory):
         cycles = self.__hit_cycles
         for entry in self.__bucket[bucket_index]:
             if entry['valid'] == 1 and entry['tag'] == tag:
-                entry['accessed_at'] = self.__entry_count
-                self.__entry_count += 1
-                self.__hits += 1
+                if not no_effect:
+                    entry['accessed_at'] = self.__entry_count
+                    self.__entry_count += 1
+                    self.__hits += 1
 
-                entry['data'][index] = value
+                    entry['data'][index] = value
                 if self.__write_hit_policy == WritePolicy.write_through:
-                    return cycles + self.__parent_memory.write_in_address(word * 2, value)
+                    return cycles + self.__parent_memory.write_in_address(word * 2, value, no_effect)
                 elif self.__write_hit_policy == WritePolicy.write_back:
-                    entry['dirty'] = 1
+                    if not no_effect:
+                        entry['dirty'] = 1
                     return cycles
 
         print "gena ne write am miss -> " + str(self.__hit_cycles)
         if self.__write_miss_policy == WritePolicy.write_allocate:
-            result = self.__parent_memory.get_line(word / self.__line_size)
+            result = self.__parent_memory.get_line(word / self.__line_size, no_effect)
             print "-> " + str(result[1])
             result[1][word % self.__line_size] = value
-            cycles += self.__cache(word / self.__line_size, result[1])
+            cycles += self.__cache(word / self.__line_size, result[1], no_effect)
             #self.__parent_memory.write_block(word / self.__line_size, result[1])
             cycles += result[0]
         elif self.__write_miss_policy == WritePolicy.write_around:
-            cycles += self.__parent_memory.write_in_address(word * 2, value)
+            cycles += self.__parent_memory.write_in_address(word * 2, value, no_effect)
 
-
-        self.__misses += 1
-        result = self.__parent_memory.get_line(address)
-        self.__cache(address, result[1])
+        if not no_effect:
+            self.__misses += 1
+        result = self.__parent_memory.get_line(address, no_effect)
+        self.__cache(address, result[1], no_effect)
         return cycles
 
 
@@ -109,7 +113,7 @@ class Cache(BaseMemory):
     def caclculate_cycles(self, address, is_read):
         pass
 
-    def get_line(self, address):
+    def get_line(self, address, no_effect=False):
         word = address
         address /= self.__line_size
         tag = address / (self.__cache_entries / self.__associaticity_level)
@@ -118,21 +122,23 @@ class Cache(BaseMemory):
         print self.__bucket
         for entry in self.__bucket[bucket_index]:
             if entry != None and entry['valid'] == 1 and entry['tag'] == tag:
-                entry['accessed_at'] = self.__entry_count
-                self.__entry_count += 1
-                print "Cache hit"
-                self.__hits += 1
+                if not no_effect:
+                    entry['accessed_at'] = self.__entry_count
+                    self.__entry_count += 1
+                    print "Cache hit"
+                    self.__hits += 1
                 return (self.__hit_cycles, entry['data'])
 
 
         print "Cache miss"
-        self.__misses += 1
-        result = self.__parent_memory.get_line(word / self.__line_size)
-        cycles = self.__cache(address, result[1])
+        if not no_effect:
+            self.__misses += 1
+        result = self.__parent_memory.get_line(word / self.__line_size, no_effect)
+        cycles = self.__cache(address, result[1], no_effect)
 
         return (result[0] + cycles, result[1])
 
-    def __cache(self, address, data, dirty=0):
+    def __cache(self, address, data, dirty=0, no_effect=False):
         bucket_index = address % (self.__cache_entries / self.__associaticity_level)
         last_accessed = {'accessed_at': 99999999999}
         for entry in self.__bucket[bucket_index]:
@@ -144,14 +150,14 @@ class Cache(BaseMemory):
 
         cycles = self.__hit_cycles
         if last_accessed.get('dirty', 0) == 1:
-            cycles += self.__parent_memory.write_block(address, last_accessed['data'])
-
-        last_accessed['valid'] = 1
-        last_accessed['data'] = data
-        last_accessed['accessed_at'] = self.__entry_count
-        self.__entry_count += 1
-        last_accessed['tag'] = address / (self.__cache_entries / self.__associaticity_level)
-        last_accessed['dirty'] = dirty
+            cycles += self.__parent_memory.write_block(address, last_accessed['data'], no_effect)
+        if not no_effect:
+            last_accessed['valid'] = 1
+            last_accessed['data'] = data
+            last_accessed['accessed_at'] = self.__entry_count
+            self.__entry_count += 1
+            last_accessed['tag'] = address / (self.__cache_entries / self.__associaticity_level)
+            last_accessed['dirty'] = dirty
         return cycles
 
     def print_logs(self, level):

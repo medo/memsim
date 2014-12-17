@@ -23,7 +23,7 @@ class Processor:
         self.number_of_ways = number_of_ways
         self.register_stat = RegisterStat(self.NUMBER_OF_REGISTERS)
         self.reorder_buffer = ReorderBuffer(reorder_buffer_size)
-        self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles, self.reorder_buffer)
+        self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles, self.reorder_buffer, self)
         self.read_more_instructions = True
 
     def progress(self):
@@ -40,12 +40,11 @@ class Processor:
                 if reservation_station.busy:
                     any_change = True
                     if reservation_station.progress == InstructionProgress.issue:
-                        if i in [ FunctionalUnit.load, FunctionalUnit.store ]:
+                        if reservation_station.type_ in [ FunctionalUnit.load, FunctionalUnit.store ]:
                             if reservation_station.qj == -1: # Ready to calculate address
                                 reservation_station.address += reservation_station.vj
                                 reservation_station.progress = InstructionProgress.execute
                                 reservation_station.start()
-                                reservation_station.progress_single_cycle()
                         elif reservation_station.qj == -1 and reservation_station.qk == -1:
                             reservation_station.progress = InstructionProgress.execute
                             reservation_station.start()
@@ -186,7 +185,6 @@ class Processor:
         current_reservation_station.progress = InstructionProgress.issue
 
     def execute_instruction(self, instruction):
-        if instruction.type_ == InstructionType.load : self.load(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.jump: self.jump(instruction.reg_a, instruction.imm)
         if instruction.type_ == InstructionType.branch_if_equal: self.branch_if_equal(instruction.reg_a, instruction.reg_b, instruction.imm)
@@ -207,13 +205,6 @@ class Processor:
         if instruction.type_ == InstructionType.nand: return FunctionalUnit.logical
         if instruction.type_ == InstructionType.multiply: return FunctionalUnit.mult
         if instruction.type_ == InstructionType.halt: return FunctionalUnit.halt
-
-    def load(self, destination, base_address_register, offset):
-        base_address = self.register_file.get(base_address_register)
-        data = self.data_store.get_address(base_address + offset)
-        self.busy_for += data[0]
-        print "//////// " + str(data)
-        self.register_file.set(destination, data[1])
 
     def store(self, source, base_address_register, offset):
         base_address = self.register_file.get(base_address_register)

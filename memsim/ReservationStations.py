@@ -2,13 +2,14 @@ from InstructionProgress import InstructionProgress
 from InstructionType import InstructionType
 
 class ReservationStations:
-    def __init__(self, names, cycles, reorder_buffers):
+    def __init__(self, names, cycles, reorder_buffers, processor):
         self.reorder_buffers = reorder_buffers
+        self.processor = processor
         self.entries = {}
         for i in cycles.keys():
             self.entries[i] = []
         for i in names:
-            self.entries[i].append(ReservationStationEntry(i, cycles[i], self.reorder_buffers))
+            self.entries[i].append(ReservationStationEntry(i, cycles[i], self.reorder_buffers, processor))
 
     def can_hold(self, type_):
         return self.get(type_) != -1
@@ -31,10 +32,11 @@ class ReservationStationEntry:
 
     MASK = 0xFFFF
 
-    def __init__(self, type_, cycles, reorder_buffers):
+    def __init__(self, type_, cycles, reorder_buffers, processor):
         self.type_ = type_
         self.cycles = cycles
         self.reorder_buffers = reorder_buffers
+        self.processor = processor
         self.clear()
 
     def clear(self):
@@ -52,7 +54,10 @@ class ReservationStationEntry:
         self.result = 0
 
     def start(self):
-        self.cycles_left = self.cycles
+        if self.operation == InstructionType.load:
+            self.cycles_left =  self.processor.data_store.get_address(self.address,True)[0]
+        else:
+            self.cycles_left = self.cycles
 
     def progress_single_cycle(self):
         if self.cycles_left > 0:
@@ -72,7 +77,7 @@ class ReservationStationEntry:
 
     def execute(self):
         current_buffer = self.get_reorder_buffer()
-        #if self.operation == InstructionType.load : self.load(instruction.reg_a, instruction.reg_b, instruction.imm)
+        if self.operation == InstructionType.load : self.result = self.processor.data_store.get_address(self.address,False)[1]
         #if self.operation == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
         #if self.operation == InstructionType.jump: self.jump(instruction.reg_a, instruction.imm)
         #if self.operation == InstructionType.branch_if_equal: self.branch_if_equal(instruction.reg_a, instruction.reg_b, instruction.imm)

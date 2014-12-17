@@ -41,8 +41,8 @@ class ReservationStationEntry:
         self.busy = False
         self.vj = 0
         self.vk = 0
-        self.qj = 0
-        self.qk = 0
+        self.qj = -1
+        self.qk = -1
         self.address = -1
         self.cycles_left = 0
         self.progress = 0

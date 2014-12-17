@@ -33,19 +33,21 @@ class Processor:
         self.cycles += 1
         common_data_bus_empty = True
         can_commit = True
+        any_change = False
         # Update Reservation Stations
         for i in self.reservation_stations.entries.keys():
             for j in range(len(self.reservation_stations.entries[i])):
                 reservation_station = self.reservation_stations.entries[i][j]
                 if reservation_station.busy:
+                    any_change = True
                     if reservation_station.progress == InstructionProgress.issue:
                         if i in [ FunctionalUnit.load, FunctionalUnit.store ]:
-                            if reservation_station.qj == 0 : # Ready to calculate address
+                            if reservation_station.qj == -1: # Ready to calculate address
                                 reservation_station.address += reservation_station.vj
                                 reservation_station.progress = InstructionProgress.execute
                                 reservation_station.start()
                                 reservation_station.progress_single_cycle()
-                        elif reservation_station.qj == 0 and reservation_station.qk == 0:
+                        elif reservation_station.qj == -1 and reservation_station.qk == -1:
                             reservation_station.progress = InstructionProgress.execute
                             reservation_station.start()
                             reservation_station.progress_single_cycle()
@@ -64,13 +66,13 @@ class Processor:
                                     tmp = self.reservation_stations.entries[q][w]
                                     if tmp.qj == b:
                                         tmp.vj = reservation_station.result
-                                        tmp.qj = 0
+                                        tmp.qj = -1
                             for q in self.reservation_stations.entries.keys():
                                 for w in range(len(self.reservation_stations.entries[q])):
                                     tmp = self.reservation_stations.entries[q][w]
                                     if tmp.qk == b:
                                         tmp.vk = reservation_station.result
-                                        tmp.qk = 0
+                                        tmp.qk = -1
                             rob = reservation_station.get_reorder_buffer()
                             rob.value = reservation_station.result
                             rob.set_ready(True)
@@ -79,6 +81,7 @@ class Processor:
                             reservation_station.clear()
 
         if self.reorder_buffer.get_head().is_ready() and can_commit:
+            any_change = True
             rob = self.reorder_buffer.get_head()
             d = rob.dest
             self.register_file.set(d, rob.value)
@@ -90,6 +93,7 @@ class Processor:
         #pdb.set_trace()
         # Issue new instructions
         if self.read_more_instructions:
+            any_change = True
             for i in range(self.number_of_ways):
                 instruction = InstructionParser.parse(self.instruction_store.get_address(self.pc)[1])
                 if instruction.type_ == InstructionType.halt:
@@ -100,6 +104,9 @@ class Processor:
                     self.pc += 2
                 else:
                     break
+
+        if not any_change:
+            self.stopped = True
         
         print "\n\nReservation Stations :"
         print self.reservation_stations
@@ -123,14 +130,14 @@ class Processor:
         current_reservation_station = self.reservation_stations.get(functional_unit)
         if self.register_stat.busy(instruction.rs):
             h = self.register_stat.get(instruction.rs)
-            if self.reorder_buffer.get(h).ready():
+            if self.reorder_buffer.get(h).is_ready():
                 current_reservation_station.vj = self.reorder_buffer.get(h).value
-                current_reservation_station.qj = 0
+                current_reservation_station.qj = -1
             else:
                 current_reservation_station.qj = h
         else:
             current_reservation_station.vj = self.register_file.get(instruction.rs)
-            current_reservation_station.qj = 0
+            current_reservation_station.qj = -1
 
         current_reservation_station.set_busy(True)
         current_reservation_station.dest = current_rob.get_id()
@@ -143,18 +150,18 @@ class Processor:
         if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ]:
             if current_reservation_station.operation == InstructionType.add_immediate:
                 current_reservation_station.vk = instruction.imm
-                current_reservation_station.qk = 0
+                current_reservation_station.qk = -1
             else:
                 if self.register_stat.busy(instruction.rt):
                     h = self.register_stat.get(instruction.rt)
-                    if self.reorder_buffer.get(h).ready():
+                    if self.reorder_buffer.get(h).is_ready():
                         current_reservation_station.vk = self.reorder_buffer.get(h).value
-                        current_reservation_station.qk = 0
+                        current_reservation_station.qk = -1
                     else:
                         current_reservation_station.qk = h
                 else:
                     current_reservation_station.vk = self.register_file.get(instruction.rt)
-                    current_reservation_station.qk = 0
+                    current_reservation_station.qk = -1
 
         if functional_unit in [ FunctionalUnit.load ] :
             current_reservation_station.address = instruction.imm

@@ -20,9 +20,15 @@ class InstructionParser:
         elif re.match("(JMP),([^, ]+),([^, ]+)",line):
             m = re.match("(JMP),([^, ]+),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))
-            reg_a = int(m.group(2))
+            reg_b = int(m.group(2))
             imm = int(m.group(3))
-        elif re.match("(BEQ|ADDI),([^, ]+),([^, ]+),([^, ]+)",line):
+        elif re.match("(BEQ),([^, ]+),([^, ]+),([^, ]+)",line):
+            m = re.match("(BEQ|ADDI),([^, ]+),([^, ]+),([^, ]+)",line)
+            type_ = InstructionParser.get_type(m.group(1))
+            reg_b = int(m.group(2))
+            reg_c = int(m.group(3))
+            imm = int(m.group(4))
+        elif re.match("(ADDI),([^, ]+),([^, ]+),([^, ]+)",line):
             m = re.match("(BEQ|ADDI),([^, ]+),([^, ]+),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))
             reg_a = int(m.group(2))
@@ -36,7 +42,7 @@ class InstructionParser:
         elif re.match("(RET),([^, ]+)",line):
             m = re.match("(RET),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))
-            reg_a = int(m.group(2))
+            reg_b = int(m.group(2))
         elif re.match("(ADD|SUB|ADDI|NAND|MUL),([^, ]+),([^, ]+),([^, ]+)",line):
             m = re.match("(ADD|SUB|ADDI|NAND|MUL),([^, ]+),([^, ]+),([^, ]+)",line)
             type_ = InstructionParser.get_type(m.group(1))

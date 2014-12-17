@@ -23,10 +23,22 @@ class ReorderBuffer:
     def get(self, id_):
         return self.buffer_[id_]
 
+    def clear_after(self, id_):
+        start = id_
+        while start != self.tail:
+            self.buffer_[start].reservation_station.clear()
+            self.buffer_[start].clear()
+            start += 1
+            start = start % len(self.buffer_)
+        self.tail = id_
+
     def get_based_on_type(self, dest, type_):
         for i in self.buffer_:
             if i.type_ == type_ and i.dest == dest:
                 return i
+
+    def get_size(self):
+        return len(self.buffer_)
 
     def __str__(self):
         return "\n".join([ i.to_str() for i in self.buffer_ ])
@@ -42,6 +54,7 @@ class ReorderBufferEntry:
         self.value = 0
         self.ready = False
         self.empty = True
+        self.reservation_station = None
 
     def is_ready(self):
         return self.ready

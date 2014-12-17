@@ -25,6 +25,8 @@ class Processor:
         self.reorder_buffer = ReorderBuffer(reorder_buffer_size)
         self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles, self.reorder_buffer, self)
         self.read_more_instructions = True
+        self.mispredictions = 0
+        self.predections = 0
 
     def progress(self):
         #pdb.set_trace()
@@ -45,7 +47,25 @@ class Processor:
                                 reservation_station.address += reservation_station.vj
                                 reservation_station.progress = InstructionProgress.execute
                                 reservation_station.start()
+                        elif reservation_station.operation in [InstructionType.return_, InstructionType.jump_and_link ]:
+                            if reservation_station.qj == -1: # Ready to calculate address
+                                reservation_station.address = reservation_station.vj
+                                reservation_station.progress = InstructionProgress.execute
+                                reservation_station.start()
+                        elif reservation_station.operation == InstructionType.jump:
+                            if reservation_station.qj == -1: # Ready to calculate address
+                                reservation_station.address += reservation_stations.pc + reservation_station.vj + 2
+                                reservation_station.progress = InstructionProgress.execute
+                                reservation_station.start()
                         elif reservation_station.qj == -1 and reservation_station.qk == -1:
+                            if reservation_station.operation == InstructionType.branch_if_equal:
+                                self.predections += 1
+                                if reservation_station.address < 0:
+                                    reservation_station.predicted_taken = True
+                                    self.reorder_buffer.clear_after((reservation_station.get_reorder_buffer().get_id() + 1) % self.reorder_buffer.get_size())
+                                    self.set_pc(self.pc + 2 + reservation_station.address)
+                                else:
+                                    reservation_station.predicted_taken = False
                             reservation_station.progress = InstructionProgress.execute
                             reservation_station.start()
                             reservation_station.progress_single_cycle()
@@ -54,6 +74,14 @@ class Processor:
                         if reservation_station.finished():
                             reservation_station.execute()
                             reservation_station.progress = InstructionProgress.write
+                            if reservation_station.operation == InstructionType.branch_if_equal:
+                                if reservation_station.result == 0 ^ reservation_station.predicted_taken:
+                                    self.inc_mispredictions()
+                                    self.reorder_buffer.clear_after(reservation_station.get_reorder_buffer().get_id())
+                                    self.set_pc(reservation_station.pc + 2)
+                                else:
+                                    reservation_station.get_reorder_buffer().clear()
+                                    reservation_station.clear()
                     elif reservation_station.progress == InstructionProgress.write:
                         if common_data_bus_empty:
                             common_data_bus_empty = False
@@ -93,18 +121,20 @@ class Processor:
         if self.read_more_instructions:
             any_change = True
             for i in range(self.number_of_ways):
-                instruction = InstructionParser.parse(self.instruction_store.get_address(self.pc)[1])
+                inst = self.instruction_store.get_address(self.pc)[1]
+                instruction = InstructionParser.parse(inst)
                 if instruction.type_ == InstructionType.halt:
                     self.read_more_instructions = False
                     break
                 if self.can_issue(instruction):
                     self.instructions_count += 1
+                    print "\nIssuing : " + inst
                     self.issue(instruction)
                     self.pc += 2
                 else:
                     break
 
-        print "\n\n\n\nReservation Stations :"
+        print "\nReservation Stations :"
         print self.reservation_stations
 
         print "Reorder Buffers :"
@@ -124,6 +154,10 @@ class Processor:
             self.instruction_store.print_logs(0)
             print ""
             print "Instructions Count : " + str(self.instructions_count)
+            print ""
+            print "Number of mispredictions : " + str(self.mispredictions)
+            print ""
+            print "Number of predictions : " + str(self.predections)
         
 
     def execute_all(self): 
@@ -151,15 +185,19 @@ class Processor:
         current_reservation_station.set_busy(True)
         current_reservation_station.dest = current_rob.get_id()
         current_reservation_station.operation = instruction.type_
+        current_reservation_station.pc = self.get_pc()
         current_rob.type_ = functional_unit
         current_rob.dest = instruction.rd
         current_rob.set_ready(False)
         current_rob.set_empty(False)
+        current_rob.reservation_station = current_reservation_station
 
-        if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ]:
+        if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ] or instruction.type_ == InstructionType.jump_and_link:
             if current_reservation_station.operation == InstructionType.add_immediate:
                 current_reservation_station.vk = instruction.imm
                 current_reservation_station.qk = -1
+            elif current_reservation_station.operation == InstructionType.branch_if_equal:
+                current_reservation_station.address = instruction.imm
             else:
                 if self.register_stat.busy(instruction.rt):
                     h = self.register_stat.get(instruction.rt)
@@ -178,8 +216,9 @@ class Processor:
         elif functional_unit in [ FunctionalUnit.store ]:
             current_reservation_station.address = instruction.imm
         elif functional_unit in [ FunctionalUnit.branches ]:
-            pass
-        elif functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical ]:
+            if instruction.type_ == InstructionType.jump:
+                current_reservation_station.address = instruction.imm
+        elif functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical ] and current_reservation_station.operation != InstructionType.branch_if_equal:
             self.register_stat.set(instruction.rd, current_rob.get_id())
 
         current_reservation_station.progress = InstructionProgress.issue
@@ -190,13 +229,12 @@ class Processor:
         if instruction.type_ == InstructionType.branch_if_equal: self.branch_if_equal(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.jump_and_link: self.jump_and_link(instruction.reg_a, instruction.reg_b)
         if instruction.type_ == InstructionType.return_: self.return_(instruction.reg_a)
-        if instruction.type_ == InstructionType.halt: self.halt()
 
     def get_functional_unit(self, instruction):
         if instruction.type_ == InstructionType.load : return FunctionalUnit.load
         if instruction.type_ == InstructionType.store: return FunctionalUnit.store
         if instruction.type_ == InstructionType.jump: return FunctionalUnit.branches
-        if instruction.type_ == InstructionType.branch_if_equal: return FunctionalUnit.branches
+        if instruction.type_ == InstructionType.branch_if_equal: return FunctionalUnit.add
         if instruction.type_ == InstructionType.jump_and_link: return FunctionalUnit.branches
         if instruction.type_ == InstructionType.return_: return FunctionalUnit.branches
         if instruction.type_ == InstructionType.add: return FunctionalUnit.add
@@ -232,3 +270,12 @@ class Processor:
 
     def get_instruction_number(self):
         return (self.pc - self.start_address) / 2
+
+    def get_pc(self):
+        return self.pc
+
+    def set_pc(self, value):
+        self.pc = value
+
+    def inc_mispredictions(self):
+        self.mispredictions += 1

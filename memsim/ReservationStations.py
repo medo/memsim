@@ -1,5 +1,6 @@
 from InstructionProgress import InstructionProgress
 from InstructionType import InstructionType
+from FunctionalUnit import FunctionalUnit
 
 class ReservationStations:
     def __init__(self, names, cycles, reorder_buffers, processor):
@@ -41,21 +42,25 @@ class ReservationStationEntry:
 
     def clear(self):
         self.busy = False
-        self.vj = 0
-        self.vk = 0
+        self.vj = -1
+        self.vk = -1
         self.qj = -1
         self.qk = -1
         self.address = -1
         self.cycles_left = 0
         self.progress = 0
         self.first_load = True
-        self.dest = 0
+        self.dest = -1
         self.operation = -1
         self.result = 0
+        self.pc = 0
+        self.predicted_taken = False
 
     def start(self):
         if self.operation == InstructionType.load:
             self.cycles_left =  self.processor.data_store.get_address(self.address,True)[0]
+        elif self.type_ == FunctionalUnit.branches:
+            self.cycles_left = 1
         else:
             self.cycles_left = self.cycles
 
@@ -79,16 +84,20 @@ class ReservationStationEntry:
         current_buffer = self.get_reorder_buffer()
         if self.operation == InstructionType.load : self.result = self.processor.data_store.get_address(self.address,False)[1]
         #if self.operation == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
-        #if self.operation == InstructionType.jump: self.jump(instruction.reg_a, instruction.imm)
-        #if self.operation == InstructionType.branch_if_equal: self.branch_if_equal(instruction.reg_a, instruction.reg_b, instruction.imm)
+        if self.operation == InstructionType.jump:
+            self.processor.set_pc(self.address)
+            self.reorder_buffers.clear_after(get_reorder_buffer().get_id())
+        if self.operation == InstructionType.branch_if_equal:
+            self.result = int(self.vj) - int(self.vk)
         #if self.operation == InstructionType.jump_and_link: self.jump_and_link(instruction.reg_a, instruction.reg_b)
-        #if self.operation == InstructionType.return_: self.return_(instruction.reg_a)
+        if self.operation == InstructionType.return_:
+            self.processor.set_pc(self.address)
+            self.reorder_buffers.clear_after(get_reorder_buffer().get_id())
         if self.operation == InstructionType.add: self.result = (self.vj + self.vk) & self.MASK
         if self.operation == InstructionType.subtract: self.result = (self.vj - self.vk) & self.MASK
         if self.operation == InstructionType.add_immediate: self.result = (self.vj + self.vk) & self.MASK
         if self.operation == InstructionType.nand: self.result = (~(self.vj & self.vk) & self.MASK)
         if self.operation == InstructionType.multiply: self.result = (self.vj * self.vk) & self.MASK
-        #if self.operation == InstructionType.halt: self.halt()
 
     def to_str(self):
         return self.__str__()

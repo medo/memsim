@@ -32,9 +32,7 @@ class GUI:
             iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
             dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
         
-        types = [FunctionalUnit.add, FunctionalUnit.add, FunctionalUnit.load]
-        cycles = { FunctionalUnit.add : 2, FunctionalUnit.load : 0 }
-        self.processor = Processor(dprev, iprev, self.start_address,1,types,cycles,4)
+        self.processor = Processor(dprev, iprev, self.start_address,self.no_of_ways,self.types,self.cycles,self.no_of_rob)
         self.instruction_store = iprev
         self.data_store = dprev
 
@@ -77,12 +75,12 @@ class GUI:
         self.start_address = int(raw_input())
 
 
-        #print "Main memory access time : "
-        #self.memory_access_time = int(raw_input())
+        print "Main memory access time : "
+        self.memory_access_time = int(raw_input())
         self.memory_access_time = 2
         
-        #print "Number of caches : "
-        #self.cache_levels = int(raw_input())
+        print "Number of caches : "
+        self.cache_levels = int(raw_input())
         self.cache_levels = 0
         
         if self.cache_levels > 0:
@@ -104,8 +102,37 @@ class GUI:
             print "L" + str(i) + " Write allocate(2), Write arround(3) :"
             wm = int(raw_input())
             self.caches.append([s,self.cache_block_size,m,wh,wm,hc])
+
+        print "Function units space seperated ( ADD, MULT, LOGICAL, BRANCHES, LOAD, STORE ) : "
+        s = raw_input().split(" ")
+        self.types = [ self.map_unit_to_id(i) for i in s ]
+
+        self.cycles = {}
+        for i in [ "ADD", "MULT", "LOGICAL", "BRANCHES", "LOAD", "STORE" ]:
+            print "Cycles for %s :" % i
+            self.cycles[self.map_unit_to_id(i)] = int(raw_input())
+
+        print "No of ways :"
+        self.no_of_ways = int(raw_input())
+
+        print "No. of ROB :"
+        self.no_of_rob = int(raw_input())
         
-        
+    
+    def map_unit_to_id(self, str_):
+        if str_ == "ADD":
+            return FunctionalUnit.add
+        elif str_ == "MULT":
+            return FunctionalUnit.mult
+        elif str_ == "LOGICAL":
+            return FunctionalUnit.logical
+        elif str_ == "BRANCHES":
+            return FunctionalUnit.branches
+        elif str_ == "LOAD":
+            return FunctionalUnit.load
+        elif str_ == "STORE":
+            return FunctionalUnit.store
+
     def __init__(self):
         self.prepare_data()
         self.root = Tk()  # Ordinary window with title bar and decorations provided by window manager

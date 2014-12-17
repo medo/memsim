@@ -11,3 +11,9 @@ class RegisterStat:
     def busy(self, register):
         return self.registers[register] != -1
 
+    def clear(self, register):
+        self.registers[register] = -1
+
+    def __str__(self):
+        return " ".join([str(i) for i in self.registers])
+

@@ -10,7 +10,15 @@ class ReorderBuffer:
     def get_current_empty(self):
         ret = self.buffer_[self.tail]
         self.tail += 1
+        self.tail = self.tail % len(self.buffer_)
         return ret
+
+    def get_head(self):
+        return self.buffer_[self.head]
+
+    def inc_head(self):
+        self.head += 1
+        self.head = self.head % len(self.buffer_)
 
     def get(self, id_):
         return self.buffer_[id_]
@@ -35,7 +43,7 @@ class ReorderBufferEntry:
         self.ready = False
         self.empty = True
 
-    def ready(self):
+    def is_ready(self):
         return self.ready
 
     def set_ready(self, value):

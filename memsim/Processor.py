@@ -22,15 +22,17 @@ class Processor:
         self.start_address = start_address
         self.instructions_count = 0
         self.number_of_ways = number_of_ways
-        self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles)
         self.register_stat = RegisterStat(self.NUMBER_OF_REGISTERS)
         self.reorder_buffer = ReorderBuffer(reorder_buffer_size)
+        self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles, self.reorder_buffer)
+        self.read_more_instructions = True
 
     def progress(self):
         #pdb.set_trace()
         if self.stopped: return False
         self.cycles += 1
         common_data_bus_empty = True
+        can_commit = True
         # Update Reservation Stations
         for i in self.reservation_stations.entries.keys():
             for j in range(len(self.reservation_stations.entries[i])):
@@ -42,52 +44,71 @@ class Processor:
                                 reservation_station.address += reservation_station.vj
                                 reservation_station.progress = InstructionProgress.execute
                                 reservation_station.start()
+                                reservation_station.progress_single_cycle()
                         elif reservation_station.qj == 0 and reservation_station.qk == 0:
                             reservation_station.progress = InstructionProgress.execute
                             reservation_station.start()
-                if reservation_station.progress == InstructionProgress.execute:
-                    reservation_station.progress_single_cycle()
-                    if reservation_station.finished():
-                        reservation_station.execute()
-                        reservation_station.progress = InstructionProgress.write
-                if reservation_station.progress == InstructionProgress.write:
-                    if common_data_bus_empty:
-                        common_data_bus_empty = False
-                        b = reservation_station.dest
-                        reservation_station.set_busy(False)
-                        for q in self.reservation_stations.entries.keys():
-                            for w in range(len(self.reservation_stations.entries[q])):
-                                tmp = self.reservation_stations.entries[q][w]
-                                if tmp.qj == b:
-                                    tmp.vj = reservation_station.result
-                                    tmp.qj = 0
-                        for q in self.reservation_stations.entries.keys():
-                            for w in range(len(self.reservation_stations.entries[q])):
-                                tmp = self.reservation_stations.entries[q][w]
-                                if tmp.qk == b:
-                                    tmp.vk = reservation_station.result
-                                    tmp.qk = 0
-                        rob = self.reorder_buffer.get_based_on_type(reservation_station.dest, reservation_station.type_)
-                        rob.value = result
-                        rob.set_ready(True)
-                        reservation_station.progress = InstructionProgress.commit
-                if reservation_station.progress == InstructionProgress.commit:
-                    pass
+                            reservation_station.progress_single_cycle()
+                    elif reservation_station.progress == InstructionProgress.execute:
+                        reservation_station.progress_single_cycle()
+                        if reservation_station.finished():
+                            reservation_station.execute()
+                            reservation_station.progress = InstructionProgress.write
+                    elif reservation_station.progress == InstructionProgress.write:
+                        if common_data_bus_empty:
+                            common_data_bus_empty = False
+                            b = reservation_station.dest
+                            reservation_station.set_busy(False)
+                            for q in self.reservation_stations.entries.keys():
+                                for w in range(len(self.reservation_stations.entries[q])):
+                                    tmp = self.reservation_stations.entries[q][w]
+                                    if tmp.qj == b:
+                                        tmp.vj = reservation_station.result
+                                        tmp.qj = 0
+                            for q in self.reservation_stations.entries.keys():
+                                for w in range(len(self.reservation_stations.entries[q])):
+                                    tmp = self.reservation_stations.entries[q][w]
+                                    if tmp.qk == b:
+                                        tmp.vk = reservation_station.result
+                                        tmp.qk = 0
+                            rob = reservation_station.get_reorder_buffer()
+                            rob.value = reservation_station.result
+                            rob.set_ready(True)
+                            if self.reorder_buffer.get_head() is reservation_station.get_reorder_buffer():
+                                can_commit = False
+                            reservation_station.clear()
 
-        # Issue new instructions
-        for i in range(self.number_of_ways):
-            instruction = InstructionParser.parse(self.instruction_store.get_address(self.pc)[1])
-            if self.can_issue(instruction):
-                self.issue(instruction)
-                self.pc += 2
-            else:
-                break
+        if self.reorder_buffer.get_head().is_ready() and can_commit:
+            rob = self.reorder_buffer.get_head()
+            d = rob.dest
+            self.register_file.set(d, rob.value)
+            rob.clear()
+            if self.register_stat.get(d) == rob.get_id():
+                self.register_stat.clear(d)
+            self.reorder_buffer.inc_head()
         
-        print "Reservation Stations :"
+        #pdb.set_trace()
+        # Issue new instructions
+        if self.read_more_instructions:
+            for i in range(self.number_of_ways):
+                instruction = InstructionParser.parse(self.instruction_store.get_address(self.pc)[1])
+                if instruction.type_ == InstructionType.halt:
+                    self.read_more_instructions = False
+                    break
+                if self.can_issue(instruction):
+                    self.issue(instruction)
+                    self.pc += 2
+                else:
+                    break
+        
+        print "\n\nReservation Stations :"
         print self.reservation_stations
 
         print "Reorder Buffers :"
         print self.reorder_buffer
+
+        print "Register Status :"
+        print self.register_stat
 
     def execute_all(self): 
         while self.progress() != False:
@@ -113,22 +134,27 @@ class Processor:
 
         current_reservation_station.set_busy(True)
         current_reservation_station.dest = current_rob.get_id()
+        current_reservation_station.operation = instruction.type_
         current_rob.type_ = functional_unit
         current_rob.dest = instruction.rd
         current_rob.set_ready(False)
         current_rob.set_empty(False)
 
         if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ]:
-            if self.register_stat.busy(instruction.rt):
-                h = self.register_stat.get(instruction.rt)
-                if self.reorder_buffer.get(h).ready():
-                    current_reservation_station.vk = self.reorder_buffer.get(h).value
-                    current_reservation_station.qk = 0
-                else:
-                    current_reservation_station.qk = h
-            else:
-                current_reservation_station.vk = self.register_file.get(instruction.rt)
+            if current_reservation_station.operation == InstructionType.add_immediate:
+                current_reservation_station.vk = instruction.imm
                 current_reservation_station.qk = 0
+            else:
+                if self.register_stat.busy(instruction.rt):
+                    h = self.register_stat.get(instruction.rt)
+                    if self.reorder_buffer.get(h).ready():
+                        current_reservation_station.vk = self.reorder_buffer.get(h).value
+                        current_reservation_station.qk = 0
+                    else:
+                        current_reservation_station.qk = h
+                else:
+                    current_reservation_station.vk = self.register_file.get(instruction.rt)
+                    current_reservation_station.qk = 0
 
         if functional_unit in [ FunctionalUnit.load ] :
             current_reservation_station.address = instruction.imm
@@ -150,11 +176,6 @@ class Processor:
         if instruction.type_ == InstructionType.branch_if_equal: self.branch_if_equal(instruction.reg_a, instruction.reg_b, instruction.imm)
         if instruction.type_ == InstructionType.jump_and_link: self.jump_and_link(instruction.reg_a, instruction.reg_b)
         if instruction.type_ == InstructionType.return_: self.return_(instruction.reg_a)
-        if instruction.type_ == InstructionType.add: self.add(instruction.reg_a, instruction.reg_b, instruction.reg_c)
-        if instruction.type_ == InstructionType.subtract: self.subtract(instruction.reg_a, instruction.reg_b, instruction.reg_c)
-        if instruction.type_ == InstructionType.add_immediate: self.add_immediate(instruction.reg_a, instruction.reg_b, instruction.imm)
-        if instruction.type_ == InstructionType.nand: self.nand(instruction.reg_a, instruction.reg_b, instruction.reg_c)
-        if instruction.type_ == InstructionType.multiply: self.multiply(instruction.reg_a, instruction.reg_b, instruction.reg_c)
         if instruction.type_ == InstructionType.halt: self.halt()
 
     def get_functional_unit(self, instruction):
@@ -202,35 +223,6 @@ class Processor:
     def return_(self, source):
         self.pc = self.register_file.get(source)
 
-    def add(self, destination, source1, source2):
-        s1 = self.register_file.get(source1)
-        s2 = self.register_file.get(source2)
-        self.register_file.set(destination, (s1 + s2) & self.MASK)
-
-    def subtract(self, destination, source1, source2):
-        s1 = self.register_file.get(source1)
-        s2 = self.register_file.get(source2)
-        self.register_file.set(destination, (s1 - s2) & self.MASK)
-
-    def add_immediate(self, destination, source1, value):
-        s1 = self.register_file.get(source1)
-        self.register_file.set(destination, (s1 + value) & self.MASK)
-
-    def nand(self, destination, source1, source2):
-        s1 = self.register_file.get(source1)
-        s2 = self.register_file.get(source2)
-        self.register_file.set(destination, (~(s1 & s2) & self.MASK))
-    
-    def multiply(self, destination, source1, source2):
-        res = 0
-        s1 = int(self.register_file.get(source1))
-        s2 = self.register_file.get(source2)
-        while s2 != 0:
-            res += s1
-            res &= self.MASK
-            s2 -= 1
-        self.register_file.set(destination, res)
-    
     def halt(self):
         self.stopped = True
         print ""

@@ -9,12 +9,15 @@ class Instruction:
     
     def set_reg_a(self, reg_a):
         self.reg_a = reg_a
+        self.rd = self.reg_a
 
     def set_reg_b(self, reg_b):
         self.reg_b = reg_b
+        self.rs = self.reg_b
 
     def set_reg_c(self, reg_c):
         self.reg_c = reg_c
+        self.rt = self.reg_c
 
     def set_imm(self, imm):
         self.imm = imm

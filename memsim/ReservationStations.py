@@ -1,13 +1,14 @@
 from InstructionProgress import InstructionProgress
 class ReservationStations:
     def __init__(self, names, cycles):
+        self.entries = {}
         for i in cycles.keys():
             self.entries[i] = []
         for i in names:
             self.entries[i].append(ReservationStationEntry(i, cycles[i]))
 
     def can_hold(self, type_):
-        self.get(type_) != -1
+        return self.get(type_) != -1
 
     def get(self, type_):
         for i in range(len(self.entries[type_])):
@@ -23,7 +24,6 @@ class ReservationStationEntry:
 
     def clear(self):
         self.busy = False
-        self.op = ""
         self.vj = 0
         self.vk = 0
         self.qj = 0
@@ -43,4 +43,10 @@ class ReservationStationEntry:
     
     def finished(self):
         return self.cycles_left == 0
+
+    def set_busy(self, value):
+        self.busy = value
+
+    def busy(self):
+        return self.busy
 

@@ -1,79 +1,139 @@
 from InstructionType import InstructionType
+from FunctionalUnit import FunctionalUnit
 from RegisterFile import RegisterFile
 from InstructionParser import InstructionParser
+from ReservationStations import ReservationStations
+from RegisterStat import RegisterStat
+from InstructionProgress import InstructionProgress
+from ReorderBuffer import ReorderBuffer
+import pdb
 class Processor:
 
     NUMBER_OF_REGISTERS = 8
     MASK = 0xFFFF
 
-    def __init__(self, data_store, instruction_store, start_address):
+    def __init__(self, data_store, instruction_store, start_address, number_of_ways, reservation_stations_types, reservation_station_cycles, reorder_buffer_size):
         self.data_store = data_store
         self.instruction_store = instruction_store
         self.cycles = 0
-        self.busy_for = 0
-        self.busy_for_2 = 0
         self.stopped = False
-        self.reading = None
-        self.pending = False
         self.register_file = RegisterFile(self.NUMBER_OF_REGISTERS)
         self.pc = start_address
         self.start_address = start_address
         self.instructions_count = 0
-        self.current_instruction = None
+        self.number_of_ways = number_of_ways
+        self.reservation_stations = ReservationStations(reservation_stations_types, reservation_station_cycles)
+        self.register_stat = RegisterStat(self.NUMBER_OF_REGISTERS)
+        self.reorder_buffer = ReorderBuffer(reorder_buffer_size)
 
     def progress(self):
+        #pdb.set_trace()
         if self.stopped: return False
         self.cycles += 1
-        if self.reading == None:
-            self.reading = self.instruction_store.get_address(self.pc)
-            #self.busy_for += self.reading[0]
-            self.busy_for = 0
-            if self.reading[1] in ["", 0, None]:
-                self.cycles -=1
-                self.stopped = True
-                print ""
-                print "Data Cache : "
-                self.data_store.print_logs(0)
-                print ""
-                print "Instructions Cache : "
-                self.instruction_store.print_logs(0)
-                print ""
-                print "Instructions Count : " + str(self.instructions_count)
+        common_data_bus_empty = True
+        # Update Reservation Stations
+        for i in self.reservation_stations.entries.keys():
+            for j in range(len(self.reservation_stations.entries[i])):
+                reservation_station = self.reservation_stations.entries[i][j]
+                if reservation_station.busy:
+                    if reservation_station.progress == InstructionProgress.issue:
+                        if i in [ FunctionalUnit.load, FunctionalUnit.store ]:
+                            if reservation_station.qj == 0 : # Ready to calculate address
+                                reservation_station.address += reservation_station.vj
+                                reservation_station.progress = InstructionProgress.execute
+                                reservation_station.start()
+                        elif reservation_station.qj == 0 and reservation_station.qk == 0:
+                            reservation_station.progress = InstructionProgress.execute
+                            reservation_station.start()
+                if reservation_station.progress == InstructionProgress.execute:
+                    reservation_station.progress()
+                    if reservation_station.finished():
+                        reservation_station.execute()
+                        reservation_station.progress = InstructionProgress.write
+                if reservation_station.progress == InstructionProgress.write:
+                    if common_data_bus_empty:
+                        common_data_bus_empty = False
+                        b = reservation_station.dest
+                        reservation_station.set_busy(False)
+                        for q in self.reservation_stations.entries.keys():
+                            for w in range(len(self.reservation_stations.entries[i])):
+                                tmp = self.reservation_stations.entries[q][w]
+                                if tmp.qj == b:
+                                    tmp.vj = reservation_station.result
+                                    tmp.qj = 0
+                        for q in self.reservation_stations.entries.keys():
+                            for w in range(len(self.reservation_stations.entries[i])):
+                                tmp = self.reservation_stations.entries[q][w]
+                                if tmp.qk == b:
+                                    tmp.vk = reservation_station.result
+                                    tmp.qk = 0
+                        rob = self.reorder_buffer.get_based_on_type(reservation_station.dest, reservation_station.type_)
+                        rob.value = result
+                        rob.set_ready(True)
+                        reservation_station.progress = InstructionProgress.commit
+                if reservation_station.progress == InstructionProgress.commit:
+                    pass
 
-                return False
-            print "------> " + str(self.pc) + " " + str(self.reading)
-        if self.current_instruction == None :
-            if self.busy_for > 0:
-                self.busy_for -= 1
-            if self.busy_for == 0:
-                self.current_instruction = InstructionParser.parse(self.reading[1])
-
-        if self.current_instruction != None:
-            if self.current_instruction.type_ not in [InstructionType.load, InstructionType.store]:
-                self.reading = None
-                self.busy_for = 0
-                self.busy_for_2 = 0
+        # Issue new instructions
+        for i in range(self.number_of_ways):
+            instruction = InstructionParser.parse(self.instruction_store.get_address(self.pc)[1])
+            if self.can_issue(instruction):
+                self.issue(instruction)
                 self.pc += 2
-                self.execute_instruction(self.current_instruction)
-                self.current_instruction = None
             else:
-                if not self.pending:
-                    self.pending = True
-                    self.execute_instruction(self.current_instruction)
-                else:
-                    if self.busy_for > 0:
-                        self.busy_for -= 1
-                    if self.busy_for == 0:
-                        self.reading = None
-                        self.busy_for = 0
-                        self.busy_for_2 = 0
-                        self.pc += 2
-                        self.current_instruction = None
-                        self.pending = False
+                break
 
-    def execute_all(self):
+    def execute_all(self): 
         while self.progress() != False:
             pass
+
+    def can_issue(self, instruction):
+        return self.reservation_stations.can_hold(self.get_functional_unit(instruction)) and not self.reorder_buffer.is_full()
+
+    def issue(self, instruction):
+        functional_unit = self.get_functional_unit(instruction)
+        current_rob = self.reorder_buffer.get_current_empty()
+        current_reservation_station = self.reservation_stations.get(instruction.type_)
+        if self.register_stat.busy(instruction.rs):
+            h = self.register_stat.get(instruction.rs)
+            if self.reorder_buffer.get(h).ready():
+                current_reservation_station.vj = self.reorder_buffer.get(h).value
+                current_reservation_station.qj = 0
+            else:
+                current_reservation_station.qj = h
+        else:
+            current_reservation_station.vj = self.register_file.get(instruction.rs)
+            current_reservation_station.qj = 0
+
+        current_reservation_station.set_busy(True)
+        current_reservation_station.dest = current_rob.get_id()
+        current_rob.type_ = functional_unit
+        current_rob.dest = instruction.rd
+        current_rob.set_ready(False)
+
+        if functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical, FunctionalUnit.store ]:
+            if self.register_stat.busy(instruction.rt):
+                h = self.register_stat.get(instruction.rt)
+                if self.reorder_buffer.get(h).ready():
+                    current_reservation_station.vk = self.reorder_buffer.get(h).value
+                    current_reservation_station.qk = 0
+                else:
+                    current_reservation_station.qk = h
+            else:
+                current_reservation_station.vk = self.register_file.get(instruction.rt)
+                current_reservation_station.qk = 0
+
+        if functional_unit in [ FunctionalUnit.load ] :
+            current_reservation_station.address = instruction.imm
+            self.register_stat.set(instruction.rd, current_rob.get_id())
+        elif functional_unit in [ FunctionalUnit.store ]:
+            current_reservation_station.address = instruction.imm
+        elif functional_unit in [ FunctionalUnit.branches ]:
+            pass
+        elif functional_unit in [ FunctionalUnit.add, FunctionalUnit.mult, FunctionalUnit.logical ]:
+            self.register_stat.set(instruction.rd, current_rob.get_id())
+
+        current_reservation_station.progress = InstructionProgress.issue
 
     def execute_instruction(self, instruction):
         self.instructions_count += 1
@@ -103,7 +163,6 @@ class Processor:
         if instruction.type_ == InstructionType.nand: return FunctionalUnit.logical
         if instruction.type_ == InstructionType.multiply: return FunctionalUnit.mult
         if instruction.type_ == InstructionType.halt: self.halt()
-
 
     def load(self, destination, base_address_register, offset):
         base_address = self.register_file.get(base_address_register)

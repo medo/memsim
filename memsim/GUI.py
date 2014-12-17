@@ -3,6 +3,7 @@ from MainMemory import MainMemory
 from Cache import Cache
 from Processor import Processor
 from Assembler import Assembler
+from FunctionalUnit import FunctionalUnit
 
 class GUI:
     
@@ -30,7 +31,10 @@ class GUI:
             d = self.caches[i]
             iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
             dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
-        self.processor = Processor(dprev, iprev, self.start_address)
+        
+        types = [FunctionalUnit.add]
+        cycles = { FunctionalUnit.add : 2 }
+        self.processor = Processor(dprev, iprev, self.start_address,2,types,cycles,4)
         self.instruction_store = iprev
         self.data_store = dprev
 

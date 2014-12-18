@@ -84,7 +84,8 @@ class ReservationStationEntry:
         self.vj = int(self.vj)
         self.vk = int(self.vk)
         current_buffer = self.get_reorder_buffer()
-        if self.operation == InstructionType.load : self.result = self.processor.data_store.get_address(self.address,False)[1]
+        if self.operation == InstructionType.load :
+            self.result = self.processor.data_store.get_address(self.address,False)[1]
         #if self.operation == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
         if self.operation == InstructionType.jump:
             self.processor.set_pc(self.address)

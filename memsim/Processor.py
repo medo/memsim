@@ -85,8 +85,7 @@ class Processor:
                     elif reservation_station.progress == InstructionProgress.write:
                         if common_data_bus_empty:
                             common_data_bus_empty = False
-                            b = reservation_station.dest
-                            reservation_station.set_busy(False)
+                            b = reservation_station.get_reorder_buffer().get_id()
                             for q in self.reservation_stations.entries.keys():
                                 for w in range(len(self.reservation_stations.entries[q])):
                                     tmp = self.reservation_stations.entries[q][w]
@@ -149,9 +148,6 @@ class Processor:
             print ""
             print "Data Cache : "
             self.data_store.print_logs(0)
-            print ""
-            print "Instructions Cache : "
-            self.instruction_store.print_logs(0)
             print ""
             print "Instructions Count : " + str(self.instructions_count)
             print ""

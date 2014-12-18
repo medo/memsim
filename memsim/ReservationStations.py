@@ -61,6 +61,7 @@ class ReservationStationEntry:
     def start(self):
         if self.operation == InstructionType.load:
             self.cycles_left =  self.processor.data_store.get_address(self.address,True)[0]
+            print ">>>>>>>>>>>>>>>" + self.cycles_left
         elif self.type_ == FunctionalUnit.branches:
             self.cycles_left = 1
         else:

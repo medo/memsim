@@ -78,11 +78,9 @@ class GUI:
 
         print "Main memory access time : "
         self.memory_access_time = int(raw_input())
-        self.memory_access_time = 2
         
         print "Number of caches : "
         self.cache_levels = int(raw_input())
-        self.cache_levels = 0
         
         if self.cache_levels > 0:
             print "Enter cache line size : "

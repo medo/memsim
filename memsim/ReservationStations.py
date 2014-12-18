@@ -16,8 +16,6 @@ class ReservationStations:
         return self.get(type_) != -1
 
     def get(self, type_):
-        print "3"*10
-        print type_
         for i in range(len(self.entries[type_])):
             if self.entries[type_][i].operation == -1:
                 return self.entries[type_][i]
@@ -61,7 +59,6 @@ class ReservationStationEntry:
     def start(self):
         if self.operation == InstructionType.load:
             self.cycles_left =  self.processor.data_store.get_address(self.address,True)[0]
-            print ">>>>>>>>>>>>>>>" + self.cycles_left
         elif self.type_ == FunctionalUnit.branches:
             self.cycles_left = 1
         else:

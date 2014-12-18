@@ -54,7 +54,7 @@ class Processor:
                                 reservation_station.start()
                         elif reservation_station.operation == InstructionType.jump:
                             if reservation_station.qj == -1: # Ready to calculate address
-                                reservation_station.address += reservation_stations.pc + reservation_station.vj + 2
+                                reservation_station.address += reservation_station.pc + reservation_station.vj + 2
                                 reservation_station.progress = InstructionProgress.execute
                                 reservation_station.start()
                         elif reservation_station.qj == -1 and reservation_station.qk == -1:

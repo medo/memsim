@@ -16,6 +16,8 @@ class ReservationStations:
         return self.get(type_) != -1
 
     def get(self, type_):
+        print "3"*10
+        print type_
         for i in range(len(self.entries[type_])):
             if self.entries[type_][i].operation == -1:
                 return self.entries[type_][i]
@@ -81,12 +83,14 @@ class ReservationStationEntry:
         return self.reorder_buffers.get(self.dest)
 
     def execute(self):
+        self.vj = int(self.vj)
+        self.vk = int(self.vk)
         current_buffer = self.get_reorder_buffer()
         if self.operation == InstructionType.load : self.result = self.processor.data_store.get_address(self.address,False)[1]
         #if self.operation == InstructionType.store: self.store(instruction.reg_a, instruction.reg_b, instruction.imm)
         if self.operation == InstructionType.jump:
             self.processor.set_pc(self.address)
-            self.reorder_buffers.clear_after(get_reorder_buffer().get_id())
+            self.reorder_buffers.clear_after(self.get_reorder_buffer().get_id())
         if self.operation == InstructionType.branch_if_equal:
             self.result = int(self.vj) - int(self.vk)
         #if self.operation == InstructionType.jump_and_link: self.jump_and_link(instruction.reg_a, instruction.reg_b)

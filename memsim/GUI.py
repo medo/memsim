@@ -31,7 +31,8 @@ class GUI:
             d = self.caches[i]
             iprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],iprev)
             dprev = Cache(d[0],d[1],d[2],d[3],d[4],d[5],dprev)
-        
+        print self.cycles
+        print self.types
         self.processor = Processor(dprev, iprev, self.start_address,self.no_of_ways,self.types,self.cycles,self.no_of_rob)
         self.instruction_store = iprev
         self.data_store = dprev
@@ -108,9 +109,11 @@ class GUI:
         self.types = [ self.map_unit_to_id(i) for i in s ]
 
         self.cycles = {}
-        for i in [ "ADD", "MULT", "LOGICAL", "BRANCHES", "LOAD", "STORE" ]:
+        for i in [ "ADD", "MULT", "LOGICAL", "BRANCHES" ]:
             print "Cycles for %s :" % i
             self.cycles[self.map_unit_to_id(i)] = int(raw_input())
+        self.cycles[self.map_unit_to_id("LOAD")] = 0
+        self.cycles[self.map_unit_to_id("STORE")] = 0
 
         print "No of ways :"
         self.no_of_ways = int(raw_input())
